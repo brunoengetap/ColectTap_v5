@@ -6,7 +6,7 @@
 
 // ── CONFIGURAÇÃO ──────────────────────────────────────────────────────────
 const SPREADSHEET_ID = '1WIcWnMvIKo03Qp1d---0E_zo68wNf7Byf5KNzjX9B-I';
-const APP_VERSION    = 'ColectTap-GAS-v1.12';
+const APP_VERSION    = 'ColectTap-GAS-v1.14';
 const DRIVE_LINK_PUBLICO = true;
 
 // ── CONSTANTES DE ABAS ────────────────────────────────────────────────────
@@ -284,7 +284,7 @@ function salvarLevantamentoNR13(params) {
   garantirColunas(aba, [
     'id_visita_colect','id_equipamento_colect','status_completude','sync_status','pendencias_json',
     'status_documentacao','documentos_presentes','documentos_ausentes','documentos_a_receber',
-    'enquadra_nr13','base_enquadramento','motivo_nao_enquadramento','acao_nao_enquadramento',
+    'enquadra_nr13','enq_motivo','base_enquadramento','motivo_nao_enquadramento','acao_nao_enquadramento',
     'situacao_nr13','setor','descricao_equipamento','drive_folder_id','drive_folder_url',
     'primeira_foto_url','quantidade_fotos','fotos_json','upload_fotos_status','upload_fotos_erros','data_criacao','data_atualizacao',
     'modo_coleta_inicial','status_coleta_campo','status_coleta_documentos',
@@ -404,7 +404,7 @@ function upsertEquipamentoNR13(eq, contextoVisita, fotosInfo) {
     classe_fluido: eq.classe_fluido || '', ja_inspecionado: eq.ja_inspecionado || '',
     ano_ultima_inspecao: eq.ano_ultima_inspecao || '', tipo_ultima_inspecao: eq.tipo_ultima_inspecao || '',
 
-    diametro: eq.diametro || '', comprimento: eq.comprimento || eq.comprimento_m || '', altura: eq.altura || '',
+    diametro: eq.diametro || eq.diametro_externo_mm || eq.diametro_externo_calculado_mm || '', comprimento: eq.comprimento || eq.comprimento_m || '', altura: eq.altura || '',
     volume: eq.volume || '', espessura_parede: eq.espessura_parede || '', material: eq.material || eq.material_casco || '',
     bitola: eq.bitola === 'Outro' ? (eq.bitola_outro || '') : (eq.bitola || ''),
     classe_pressao: eq.classe_pressao || '', isolamento: eq.isolamento || '',
@@ -433,6 +433,7 @@ function upsertEquipamentoNR13(eq, contextoVisita, fotosInfo) {
     status_documentacao: eq.status_documentacao || '',
     documentos_ausentes: eq.documentos_ausentes || '', documentos_a_receber: eq.documentos_a_receber || '',
     enquadra_nr13: eq.enquadra_nr13 || '', base_enquadramento: eq.base_enquadramento || '',
+    enq_motivo: Array.isArray(eq.enq_motivo) ? eq.enq_motivo.join(' | ') : (eq.enq_motivo || ''),
     motivo_nao_enquadramento: eq.motivo_nao_enquadramento || '', acao_nao_enquadramento: eq.acao_nao_enquadramento || '',
     situacao_nr13: eq.situacao_nr13 || '', setor: eq.setor || '', descricao_equipamento: eq.descricao_equipamento || '',
     drive_folder_id: (fotosInfo && fotosInfo.drive_folder_id) || '', drive_folder_url: (fotosInfo && fotosInfo.drive_folder_url) || '',
@@ -462,11 +463,15 @@ function upsertEquipamentoNR13(eq, contextoVisita, fotosInfo) {
 
   if (rowIndex > 0) {
     if (idxByName.data_criacao >= 0 && !rowData[idxByName.data_criacao]) rowData[idxByName.data_criacao] = nowIso;
-    aba.getRange(rowIndex, 1, 1, header.length).setValues([rowData]);
+    const rngUpd = aba.getRange(rowIndex, 1, 1, header.length);
+    rngUpd.setNumberFormat('@');
+    rngUpd.setValues([rowData]);
     return { acao:'updated', id_equipamento_colect:idEquip, linha:rowIndex };
   }
 
-  aba.appendRow(rowData);
+  const lastRow = aba.getLastRow() + 1;
+  aba.getRange(lastRow, 1, 1, rowData.length).setNumberFormat('@');
+  aba.getRange(lastRow, 1, 1, rowData.length).setValues([rowData]);
   return { acao:'inserted', id_equipamento_colect:idEquip, linha:aba.getLastRow() };
 }
 // ════════════════════════════════════════════════════════════════════════
