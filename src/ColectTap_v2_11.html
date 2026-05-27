@@ -1,0 +1,3939 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ColectTap v2.6 — Levantamento NR-13 · Engetap</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+/* ── TOKENS ── */
+:root {
+  --bg:     #0d1b2a;
+  --surf:   #16283d;
+  --surf2:  #1e3450;
+  --surf3:  #243d5c;
+  --border: #2a4a6e;
+  --accent: #0ea5e9;
+  --accent2:#38bdf8;
+  --ok:     #22c55e;
+  --warn:   #f59e0b;
+  --danger: #ef4444;
+  --pend:   #a78bfa;
+  --text:   #e8f4ff;
+  --text2:  #7fb3d0;
+  --text3:  #3d6487;
+  --head:   'Barlow Condensed', sans-serif;
+  --body:   'Barlow', sans-serif;
+  --r:      14px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--body)}
+
+/* SCREENS */
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;background:var(--bg);transition:opacity .25s,transform .25s}
+.screen.hidden{opacity:0;pointer-events:none;transform:translateX(30px)}
+.screen.out{opacity:0;pointer-events:none;transform:translateX(-30px)}
+
+/* HEADER */
+.hdr{padding:14px 18px 10px;display:flex;align-items:center;gap:12px;flex-shrink:0;border-bottom:1px solid var(--border);background:var(--surf)}
+.hdr-back{background:var(--surf2);border:1px solid var(--border);border-radius:10px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;flex-shrink:0;color:var(--text2)}
+.hdr-back:active{opacity:.7}
+.hdr-info{flex:1;min-width:0}
+.hdr-title{font-family:var(--head);font-size:20px;font-weight:700;color:var(--text);line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hdr-sub{font-size:12px;color:var(--text2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hdr-badge{background:var(--accent);color:#fff;font-family:var(--head);font-size:13px;font-weight:700;padding:4px 10px;border-radius:8px;letter-spacing:.5px;flex-shrink:0}
+
+/* BODY */
+.body{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:16px}
+.body::-webkit-scrollbar{display:none}
+
+/* BOT */
+.bot{flex-shrink:0;padding:12px 16px calc(12px + var(--safe-bottom));border-top:1px solid var(--border);background:var(--surf);display:flex;gap:10px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:8px;border:none;border-radius:12px;cursor:pointer;font-family:var(--body);font-size:15px;font-weight:600;padding:14px 22px;transition:opacity .15s,transform .1s;user-select:none}
+.btn:active{opacity:.8;transform:scale(.97)}
+.btn-primary{background:var(--accent);color:#fff;flex:1;justify-content:center}
+.btn-ghost{background:var(--surf2);color:var(--text2);border:1px solid var(--border);flex:1;justify-content:center}
+.btn-ok{background:#14532d;color:var(--ok);border:1px solid #166534}
+.btn-danger{background:#450a0a;color:var(--danger);border:1px solid #7f1d1d}
+.btn-full{width:100%;justify-content:center}
+.btn-sm{padding:9px 14px;font-size:13px;border-radius:9px}
+.btn-warn{background:#431407;color:var(--warn);border:1px solid #78350f;flex:1;justify-content:center}
+.btn-pdf{background:#7c3aed;color:#fff;flex:1;justify-content:center}
+
+/* PROGRESS */
+.progress-wrap{padding:10px 18px 0;flex-shrink:0}
+.progress-track{height:3px;background:var(--surf3);border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}
+.progress-label{font-size:11px;color:var(--text3);margin-top:4px;text-align:right;letter-spacing:.5px}
+
+/* PIN */
+.pin-logo{text-align:center;padding:32px 0 16px}
+.pl-badge{display:inline-block;background:var(--accent);color:#fff;font-family:var(--head);font-size:22px;font-weight:800;padding:8px 18px;border-radius:12px;letter-spacing:2px;margin-bottom:6px}
+.pl-name{font-family:var(--head);font-size:28px;font-weight:700;color:var(--text);letter-spacing:1px}
+.pl-sub{font-size:12px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-top:3px}
+.pin-dots{display:flex;gap:16px;justify-content:center;margin:28px 0 24px}
+.pin-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);background:transparent;transition:background .15s,border-color .15s}
+.pin-dot.filled{background:var(--accent);border-color:var(--accent)}
+.pin-dot.err{background:var(--danger);border-color:var(--danger)}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 10px}
+.key{background:var(--surf2);border:1px solid var(--border);border-radius:14px;height:70px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:background .1s;user-select:none}
+.key:active{background:var(--surf3)}
+.key .kn{font-family:var(--head);font-size:28px;font-weight:700;color:var(--text);line-height:1}
+.key .kl{font-size:9px;color:var(--text3);letter-spacing:2px;margin-top:1px}
+.key-del{background:var(--surf3)}
+.key-ok{background:var(--accent)}
+.key-ok .kn,.key-ok .kl{color:#fff}
+.pin-status{text-align:center;font-size:13px;color:var(--text2);padding:12px 0 0;min-height:40px}
+
+/* GAS STATUS */
+.gas-row{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3);padding:8px 18px 0;flex-shrink:0}
+.gas-dot{width:7px;height:7px;border-radius:50%;background:var(--text3);flex-shrink:0}
+.gas-dot.ok{background:var(--ok)}
+.gas-dot.err{background:var(--danger)}
+.gas-dot.spin{background:var(--accent);animation:spin-pulse 1s infinite}
+@keyframes spin-pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* OS CARD */
+.os-card{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px;cursor:pointer;transition:border-color .15s}
+.os-card:active{background:var(--surf2)}
+.os-card:hover{border-color:var(--accent2)}
+.os-num{font-family:var(--head);font-size:22px;font-weight:800;color:var(--text)}
+.os-cli{font-size:15px;font-weight:600;color:var(--text2);margin-top:2px}
+.os-desc{font-size:13px;color:var(--text3);margin-top:4px}
+.os-meta{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+
+/* PILL */
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.pill-blue{background:#0c2d4a;color:var(--accent2);border:1px solid #1a4a6e}
+.pill-ok{background:#052e16;color:var(--ok);border:1px solid #14532d}
+.pill-warn{background:#431407;color:var(--warn);border:1px solid #78350f}
+.pill-gray{background:var(--surf2);color:var(--text2);border:1px solid var(--border)}
+.pill-pend{background:#2e1065;color:var(--pend);border:1px solid #4c1d95}
+
+/* EQUIP CARD */
+.equip-card{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:border-color .15s}
+.equip-card:active{background:var(--surf2)}
+.equip-card.done{border-color:var(--ok)}
+.equip-card.done .ec-tag{color:var(--ok)}
+.ec-tag{font-family:var(--head);font-size:22px;font-weight:800;color:var(--text)}
+.ec-tipo{font-size:12px;color:var(--text2);margin-top:2px}
+.ec-status{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.ec-add{border:1px dashed var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;cursor:pointer;color:var(--text2);font-size:14px;font-weight:600;background:transparent;transition:color .15s,border-color .15s;width:100%}
+.ec-add:hover{color:var(--accent);border-color:var(--accent)}
+
+/* TYPE GRID */
+.type-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.type-card{background:var(--surf);border:2px solid var(--border);border-radius:var(--r);padding:20px 14px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .15s,background .1s}
+.type-card:active{background:var(--surf2)}
+.type-card:hover,.type-card.sel{border-color:var(--accent);background:rgba(14,165,233,.08)}
+.tc-icon{font-size:32px}
+.tc-name{font-family:var(--head);font-size:16px;font-weight:700;color:var(--text);text-align:center}
+
+/* FIELD / FORM */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:15px;color:var(--text);font-family:var(--body)}
+.field input::placeholder,.field textarea::placeholder{color:var(--text3)}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent);background:var(--surf2)}
+.field select option{background:var(--surf)}
+.field-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.field textarea{resize:none;min-height:72px}
+input[type=number]{-moz-appearance:textfield}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+
+/* TOGGLE (sim/não) */
+.toggle-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.toggle-opt{flex:1 1 calc(50% - 8px);min-width:120px;max-width:100%;padding:11px 6px;border:1px solid var(--border);border-radius:10px;text-align:center;cursor:pointer;font-size:13px;font-weight:600;color:var(--text2);background:var(--surf);transition:all .15s;word-break:break-word;line-height:1.3}
+@media (max-width:400px){.toggle-opt{flex:1 1 100%;min-width:unset}}
+.toggle-opt.sel-ok{background:#052e16;border-color:var(--ok);color:var(--ok)}
+.toggle-opt.sel-no{background:#450a0a;border-color:var(--danger);color:var(--danger)}
+.toggle-opt.sel-na{background:#1e1b4b;border-color:var(--pend);color:var(--pend)}
+
+/* CHECKBOX LIST */
+.check-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.check-item{display:flex;align-items:center;gap:12px;background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;transition:border-color .15s}
+.check-item.checked{border-color:var(--ok);background:rgba(34,197,94,.07)}
+.check-box{width:22px;height:22px;border-radius:6px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;font-size:13px}
+.check-item.checked .check-box{background:var(--ok);border-color:var(--ok);color:#fff}
+.check-label{font-size:14px;font-weight:600;color:var(--text)}
+
+/* SECTION SEPARATOR */
+.sec-label{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)}
+.sec-label:first-child{border-top:none;padding-top:0;margin-top:0}
+
+/* PHOTO */
+.photo-btn{display:flex;align-items:center;justify-content:center;gap:10px;border:2px dashed var(--border);border-radius:12px;padding:18px;cursor:pointer;color:var(--text2);font-size:14px;font-weight:600;background:transparent;width:100%;margin-bottom:14px;transition:all .15s}
+.photo-btn:hover{border-color:var(--accent);color:var(--accent)}
+.photo-thumb{width:100%;border-radius:10px;max-height:180px;object-fit:cover;margin-bottom:10px;display:block}
+.photo-clear{font-size:12px;color:var(--danger);cursor:pointer;text-align:center;margin-bottom:14px;display:block}
+input[type=file]{display:none}
+
+/* TOAST */
+#toast{position:fixed;bottom:calc(90px + var(--safe-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:var(--ok);color:#fff;padding:10px 20px;border-radius:20px;font-weight:600;font-size:13px;opacity:0;transition:all .3s;pointer-events:none;z-index:9999;white-space:nowrap;max-width:90vw;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.err{background:var(--danger)}
+#toast.warn{background:var(--warn)}
+
+/* DIALOG */
+.dialog-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:flex-end;justify-content:center;padding:16px;padding-bottom:calc(16px + var(--safe-bottom))}
+.dialog-overlay.open{display:flex}
+.dialog{background:var(--surf);border:1px solid var(--border);border-radius:20px;width:100%;max-width:440px;overflow:hidden;max-height:85vh;display:flex;flex-direction:column}
+.dialog-head{padding:20px 20px 12px;font-family:var(--head);font-size:20px;font-weight:700;color:var(--text);flex-shrink:0}
+.dialog-body{padding:0 20px 16px;font-size:14px;color:var(--text2);line-height:1.5;overflow-y:auto}
+.dialog-foot{padding:12px 16px 16px;display:flex;gap:10px;flex-shrink:0;border-top:1px solid var(--border)}
+
+/* LOADING */
+
+/* BACK-GUARD */
+.back-guard{display:none;position:fixed;inset:0;background:rgba(10,20,50,.85);z-index:9000;align-items:center;justify-content:center;padding:24px}
+.back-guard.open{display:flex}
+.back-guard-box{background:var(--surf);border:1px solid var(--border);border-radius:16px;padding:24px 20px;max-width:320px;width:100%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.back-guard-box h3{font-family:var(--head);font-size:22px;font-weight:800;color:var(--warn);margin-bottom:8px;text-transform:uppercase}
+.back-guard-box p{font-size:13px;color:var(--text2);line-height:1.55;margin-bottom:20px}
+.back-guard-actions{display:flex;flex-direction:column;gap:10px}
+.btn-guard-stay{background:var(--accent);color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--body)}
+.btn-guard-save-exit{background:var(--surf2);color:var(--ok);border:1px solid var(--border);border-radius:12px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--body)}
+.btn-guard-leave{background:#450a0a;color:var(--danger);border:1px solid #7f1d1d;border-radius:12px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--body)}
+#loadingOverlay{position:fixed;inset:0;background:rgba(13,27,42,.85);z-index:999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+#loadingOverlay.open{display:flex}
+.spinner{width:48px;height:48px;border:4px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{font-size:15px;color:var(--text2);font-weight:600}
+
+/* SUCCESS */
+.success-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center;flex:1}
+.success-icon{font-size:72px;margin-bottom:20px}
+.success-title{font-family:var(--head);font-size:32px;font-weight:800;color:var(--text);margin-bottom:8px}
+.success-sub{font-size:15px;color:var(--text2);line-height:1.6}
+.success-id{margin-top:20px;background:var(--surf2);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-family:monospace;font-size:18px;color:var(--accent2);font-weight:700}
+
+/* INFO/WARN BOX */
+.info-box{background:rgba(14,165,233,.1);border:1px solid rgba(14,165,233,.3);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--accent2);margin-bottom:14px;line-height:1.5}
+.warn-box{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--warn);margin-bottom:14px;line-height:1.5}
+
+/* EMPTY */
+.empty-state{text-align:center;padding:32px 16px;color:var(--text3)}
+.empty-state .ei{font-size:40px;margin-bottom:10px}
+
+/* REVISION CARD */
+.rev-card{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);margin-bottom:12px;overflow:hidden}
+.rev-head{padding:12px 14px;background:var(--surf2);display:flex;justify-content:space-between;align-items:center}
+.rev-head-tag{font-family:var(--head);font-size:18px;font-weight:700;color:var(--text)}
+.rev-head-tipo{font-size:12px;color:var(--text2)}
+.rev-row{display:flex;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--border);font-size:13px}
+.rev-row:last-child{border-bottom:none}
+.rev-label{color:var(--text2);flex:1}
+.rev-value{color:var(--text);font-weight:600;text-align:right;max-width:55%}
+
+/* CAMPO INCOMPLETO — destaque visual ao avançar com campos vazios */
+.field.campo-incompleto label{color:var(--warn)}
+.field.campo-incompleto input,.field.campo-incompleto select,.field.campo-incompleto textarea{border-color:var(--warn)!important;background:rgba(245,158,11,.07)}
+.field.campo-incompleto .toggle-row{outline:2px solid var(--warn);border-radius:10px}
+.campo-incompleto-banner{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.5);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--warn);margin-bottom:14px;display:flex;align-items:center;gap:8px;line-height:1.4}
+
+/* BOTÃO LIXEIRA no equip-card */
+.ec-del{background:none;border:none;cursor:pointer;font-size:16px;padding:4px 8px;border-radius:8px;color:var(--text3);transition:color .15s,background .15s;flex-shrink:0;line-height:1}
+.ec-del:active{color:var(--danger);background:rgba(239,68,68,.12)}
+
+/* EXPORT ACTIONS */
+.export-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.export-btn{display:flex;flex-direction:column;align-items:center;gap:8px;padding:18px 12px;border:1px solid var(--border);border-radius:14px;background:var(--surf);cursor:pointer;transition:all .15s;text-align:center}
+.export-btn:active{background:var(--surf2)}
+.export-btn .eb-icon{font-size:28px}
+.export-btn .eb-label{font-family:var(--head);font-size:14px;font-weight:700;color:var(--text)}
+.export-btn .eb-sub{font-size:11px;color:var(--text2)}
+.export-btn.pdf-btn{border-color:#7c3aed;background:rgba(124,58,237,.1)}
+.export-btn.xls-btn{border-color:var(--ok);background:rgba(34,197,94,.07)}
+.export-btn.upload-btn{border-color:var(--accent);background:rgba(14,165,233,.08)}
+
+/* SCROLL HINT */
+.scroll-hint{
+  position:absolute;
+  bottom:74px;left:0;right:0;
+  height:56px;
+  background:linear-gradient(to bottom,transparent,rgba(13,27,42,.95));
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  padding-bottom:8px;
+  pointer-events:none;
+  transition:opacity .4s;
+  z-index:10;
+}
+.scroll-hint.hidden{opacity:0}
+.scroll-hint-pill{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  background:var(--surf2);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:5px 14px;
+  font-size:12px;
+  font-weight:600;
+  color:var(--text2);
+  animation:bounce-hint 1.6s ease-in-out infinite;
+  pointer-events:none;
+}
+@keyframes bounce-hint{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-4px)}
+}
+#t5-btn-next.has-scroll{opacity:.5}
+.envio-card{border:1px solid var(--border);border-radius:12px;background:var(--surf);margin-bottom:10px;overflow:hidden}
+.envio-card-hdr{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer}
+.envio-card-hdr input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent);flex-shrink:0}
+.envio-card-info{flex:1;min-width:0}
+.envio-card-tag{font-family:var(--head);font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.envio-card-status{font-size:11px;color:var(--text2);margin-top:2px}
+.envio-card-fotos{padding:0 12px 12px 40px;display:none}
+.envio-card-fotos.open{display:block}
+.foto-radio-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)}
+.foto-radio-row:last-child{border-bottom:none}
+.foto-radio-row input[type=radio]{accent-color:var(--accent);flex-shrink:0}
+.foto-thumb-mini{width:48px;height:36px;object-fit:cover;border-radius:4px;flex-shrink:0}
+.foto-radio-label{font-size:12px;color:var(--text2);flex:1}
+.pill-liberado{background:rgba(34,197,94,.15);color:#16a34a;border:1px solid rgba(34,197,94,.3)}
+.pill-synced{background:rgba(14,165,233,.12);color:var(--accent)}
+
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- T1 — LOGIN / PIN                                        -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="screen" id="scr-t1">
+  <div class="gas-row"><div class="gas-dot spin" id="gasDot"></div><span id="gasLabel">Conectando…</span></div>
+  <div class="body" style="display:flex;flex-direction:column">
+    <div class="pin-logo">
+      <div class="pl-badge">COLECT</div>
+      <div class="pl-name">Tap</div>
+      <div class="pl-sub">Engetap · NR-13 · v2.6</div>
+    </div>
+    <div class="pin-dots" id="pinDots">
+      <div class="pin-dot" id="pd0"></div><div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div><div class="pin-dot" id="pd3"></div>
+    </div>
+    <div class="keypad">
+      <div class="key" onclick="keyPress('1')"><div class="kn">1</div><div class="kl">   </div></div>
+      <div class="key" onclick="keyPress('2')"><div class="kn">2</div><div class="kl">ABC</div></div>
+      <div class="key" onclick="keyPress('3')"><div class="kn">3</div><div class="kl">DEF</div></div>
+      <div class="key" onclick="keyPress('4')"><div class="kn">4</div><div class="kl">GHI</div></div>
+      <div class="key" onclick="keyPress('5')"><div class="kn">5</div><div class="kl">JKL</div></div>
+      <div class="key" onclick="keyPress('6')"><div class="kn">6</div><div class="kl">MNO</div></div>
+      <div class="key" onclick="keyPress('7')"><div class="kn">7</div><div class="kl">PQRS</div></div>
+      <div class="key" onclick="keyPress('8')"><div class="kn">8</div><div class="kl">TUV</div></div>
+      <div class="key" onclick="keyPress('9')"><div class="kn">9</div><div class="kl">WXYZ</div></div>
+      <div class="key key-del" onclick="keyDel()"><div class="kn" style="font-size:22px">⌫</div></div>
+      <div class="key" onclick="keyPress('0')"><div class="kn">0</div><div class="kl">   </div></div>
+      <div class="key key-ok" onclick="keyOk()"><div class="kn" style="font-size:20px">✓</div></div>
+    </div>
+    <div class="pin-status" id="pinStatus">Digite seu PIN de 4 dígitos</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- T2 — SELECIONAR OS                                      -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="screen hidden" id="scr-t2">
+  <div class="hdr">
+    <div class="hdr-info">
+      <div class="hdr-title">Ordens de Serviço</div>
+      <div class="hdr-sub" id="t2-inspector">Inspetor</div>
+    </div>
+    <button onclick="runDiagnostico()" style="background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:14px;cursor:pointer;color:var(--text2)" title="Diagnóstico">🔍</button>
+    <button onclick="atualizarOS()" style="background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:14px;cursor:pointer;color:var(--text2)" title="Atualizar">🔄</button>
+  </div>
+  <div class="body" id="t2-body"><div class="empty-state"><div class="ei">📋</div>Carregando…</div></div>
+</div>
+
+<!-- MODAL DIAGNÓSTICO -->
+<div id="diag-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;padding:16px;overflow-y:auto">
+  <div style="background:var(--surf);border-radius:16px;padding:20px;max-width:500px;margin:0 auto;font-size:13px;color:var(--text)">
+    <h3 style="margin:0 0 12px;color:var(--accent)">🔍 Diagnóstico ColectTap</h3>
+    <pre id="diag-output" style="white-space:pre-wrap;word-break:break-all;background:var(--bg);padding:12px;border-radius:8px;max-height:60vh;overflow-y:auto;font-size:11px;line-height:1.5"></pre>
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+      <button onclick="runDedup()" style="flex:1;padding:10px;border-radius:8px;background:#dc2626;color:#fff;border:none;font-weight:700;font-size:13px;cursor:pointer">🗑️ Limpar duplicatas</button>
+      <button onclick="document.getElementById('diag-overlay').style.display='none'" style="flex:1;padding:10px;border-radius:8px;background:var(--surf2);color:var(--text);border:1px solid var(--border);font-weight:700;font-size:13px;cursor:pointer">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- T3 — EQUIPAMENTOS DA OS                                 -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="screen hidden" id="scr-t3">
+  <div class="hdr">
+    <div class="hdr-back" onclick="goTo('t2')">‹</div>
+    <div class="hdr-info">
+      <div class="hdr-title" id="t3-os-num">OS —</div>
+      <div class="hdr-sub" id="t3-cliente">Cliente</div>
+    </div>
+    <div class="hdr-badge" id="t3-badge">0/0</div>
+  </div>
+  <div class="body" id="t3-body"></div>
+  <div class="bot" style="flex-wrap:wrap;gap:8px">
+    <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openExportScreen()">📤 Exportar</button>
+    <button class="btn btn-primary btn-sm" style="flex:2" onclick="abrirNovoEquip()">+ Novo Equipamento</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- T4 — TIPO DO EQUIPAMENTO                                -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="screen hidden" id="scr-t4">
+  <div class="hdr">
+    <div class="hdr-back" onclick="goTo('t3')">‹</div>
+    <div class="hdr-info"><div class="hdr-title">Tipo de Equipamento</div><div class="hdr-sub">Selecione para configurar o formulário</div></div>
+  </div>
+  <div class="body">
+    <p class="sec-label">Qual é o tipo do equipamento?</p>
+    <div class="type-grid">
+      <div class="type-card" onclick="selectTipoEquip('vaso')"><div class="tc-icon">🔵</div><div class="tc-name">Vaso de Pressão</div></div>
+      <div class="type-card" onclick="selectTipoEquip('caldeira')"><div class="tc-icon">🔴</div><div class="tc-name">Caldeira</div></div>
+      <div class="type-card" onclick="selectTipoEquip('tubulacao')"><div class="tc-icon">⚙️</div><div class="tc-name">Tubulação</div></div>
+      <div class="type-card" onclick="selectTipoEquip('tanque')"><div class="tc-icon">🟡</div><div class="tc-name">Tanque Metálico</div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- T4B — MODO DE COLETA                                    -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="screen hidden" id="scr-t4b">
+  <div class="hdr">
+    <div class="hdr-back" onclick="goTo('t4')">‹</div>
+    <div class="hdr-info">
+      <div class="hdr-title" id="t4b-tipo-label">Equipamento</div>
+      <div class="hdr-sub">Como deseja iniciar a coleta?</div>
+    </div>
+  </div>
+  <div class="body" style="padding:20px 16px">
+    <p class="sec-label" style="margin-bottom:16px">Escolha o ponto de partida da coleta</p>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="type-card" style="flex-direction:row;gap:16px;padding:22px 18px;align-items:flex-start;text-align:left"
+           onclick="selecionarModoColeta('campo')">
+        <div style="font-size:36px;flex-shrink:0">🔧</div>
+        <div>
+          <div class="tc-name" style="font-size:18px;margin-bottom:6px">Estou próximo ao equipamento</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.5">
+            Priorizar placa, TAG, dimensões, dispositivos, instalação, acesso, condição visual e fotos.
+          </div>
+        </div>
+      </div>
+      <div class="type-card" style="flex-direction:row;gap:16px;padding:22px 18px;align-items:flex-start;text-align:left"
+           onclick="selecionarModoColeta('documento')">
+        <div style="font-size:36px;flex-shrink:0">📁</div>
+        <div>
+          <div class="tc-name" style="font-size:18px;margin-bottom:6px">Estou com a documentação em mãos</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.5">
+            Priorizar prontuário, relatórios, certificados, projetos, dados de projeto, histórico e vencimentos.
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="info-box" style="margin-top:20px">
+      💡 Você poderá alternar entre os modos durante a coleta sem perder dados preenchidos.
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- T5 — FORMULÁRIO DO EQUIPAMENTO                         -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="screen hidden" id="scr-t5">
+  <div class="hdr">
+    <div class="hdr-back" onclick="goTo('t4b')">‹</div>
+    <div class="hdr-info">
+      <div class="hdr-title" id="t5-tipo-label">Vaso de Pressão</div>
+      <div class="hdr-sub" id="t5-os-label">OS —</div>
+    </div>
+    <div class="hdr-badge" id="t5-badge">Novo</div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-track"><div class="progress-fill" id="t5-progress" style="width:20%"></div></div>
+    <div class="progress-label" id="t5-progress-lbl">Seção 1 de 7</div>
+  </div>
+  <div id="t5-modo-badge" style="
+    padding:5px 18px 6px;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.8px;
+    color:var(--text3);
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-shrink:0;
+    border-bottom:1px solid var(--border);
+    background:var(--surf);
+  ">
+    <span id="t5-modo-icon">🔧</span>
+    <span id="t5-modo-label">Fluxo: Equipamento em campo</span>
+    <span style="flex:1"></span>
+    <span id="t5-origem-sec" style="opacity:.7"></span>
+    <button id="t5-btn-alternar"
+      onclick="alternarModoColeta()"
+      style="background:var(--surf2);border:1px solid var(--border);border-radius:8px;
+             padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;
+             color:var(--text2);white-space:nowrap">
+      Alternar →
+    </button>
+  </div>
+  <div class="body" id="t5-body" style="position:relative"></div>
+  <div class="scroll-hint hidden" id="t5-scroll-hint">
+    <div class="scroll-hint-pill">↓ Role para ver tudo</div>
+  </div>
+  <div class="bot">
+    <button class="btn btn-ghost" id="t5-btn-back" onclick="secBack()">‹ Anterior</button>
+    <button class="btn btn-primary" id="t5-btn-next" onclick="secNext()">Próximo →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- T6 — REVISÃO DO EQUIPAMENTO                            -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="screen hidden" id="scr-t6">
+  <div class="hdr">
+    <div class="hdr-back" onclick="goTo('t5')">‹</div>
+    <div class="hdr-info">
+      <div class="hdr-title" id="t6-tag">Revisão</div>
+      <div class="hdr-sub" id="t6-tipo">Equipamento</div>
+    </div>
+    <div class="hdr-badge">REV</div>
+  </div>
+  <div class="body" id="t6-body"></div>
+  <div class="bot">
+    <button class="btn btn-ghost" onclick="goTo('t5')">✏️ Editar</button>
+    <button class="btn btn-ok" onclick="salvarEquipamento()">✓ Salvar</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- T-EXPORT — EXPORTAR / GERAR PDF                        -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="screen hidden" id="scr-t-export">
+  <div class="hdr">
+    <div class="hdr-back" onclick="goTo('t3')">‹</div>
+    <div class="hdr-info">
+      <div class="hdr-title">Exportar Dados</div>
+      <div class="hdr-sub" id="exp-os-label">OS —</div>
+    </div>
+  </div>
+  <div class="body">
+    <div class="info-box" id="exp-summary">Equipamentos coletados: —</div>
+
+    <p class="sec-label">Relatórios PDF (Campo)</p>
+    <div class="export-grid">
+      <div class="export-btn pdf-btn" onclick="gerarPDFEquip('individual')">
+        <div class="eb-icon">📄</div>
+        <div class="eb-label">PDF Individual</div>
+        <div class="eb-sub">Um arquivo por equipamento</div>
+      </div>
+      <div class="export-btn pdf-btn" onclick="gerarPDFEquip('completo')">
+        <div class="eb-icon">📋</div>
+        <div class="eb-label">PDF Completo</div>
+        <div class="eb-sub">Todos em um arquivo</div>
+      </div>
+    </div>
+
+    <p class="sec-label">Planilha de Dados</p>
+    <div class="export-grid">
+      <div class="export-btn xls-btn" onclick="exportarCSV()">
+        <div class="eb-icon">📊</div>
+        <div class="eb-label">Exportar CSV</div>
+        <div class="eb-sub">Abrir no Excel</div>
+      </div>
+    </div>
+
+    <div style="height:1px;background:var(--border);margin:16px 0"></div>
+
+    <p class="sec-label">Enviar para Relatório Oficial</p>
+    <div class="warn-box" style="margin-bottom:12px">
+      ☁️ Selecione os equipamentos finalizados e envie para o escritório gerar o relatório NR-13 oficial. Após o envio, o equipamento fica marcado como <strong>liberado</strong> e pode ser reenviado se necessário.
+    </div>
+
+    <div id="exp-envio-list"></div>
+
+    <div class="export-grid" style="margin-top:12px">
+      <div class="export-btn upload-btn" onclick="enviarSelecionados()">
+        <div class="eb-icon">📤</div>
+        <div class="eb-label">Enviar Selecionados</div>
+        <div class="eb-sub">Equipamentos marcados</div>
+      </div>
+      <div class="export-btn" style="border-color:var(--ok);background:rgba(34,197,94,.08)" onclick="enviarOSCompleta()">
+        <div class="eb-icon">✅</div>
+        <div class="eb-label">OS Completa</div>
+        <div class="eb-sub">Marcar tudo como pronto</div>
+      </div>
+    </div>
+
+    <div style="height:1px;background:var(--border);margin:16px 0"></div>
+    <p class="sec-label">Selecionar equipamento para PDF Individual</p>
+    <div id="exp-equip-list"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TC — CONFIRMAÇÃO / SUCESSO                             -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="screen hidden" id="scr-tc">
+  <div class="hdr">
+    <div class="hdr-info"><div class="hdr-title">Dados Enviados</div><div class="hdr-sub">ColectTap · NR-13</div></div>
+  </div>
+  <div class="body">
+    <div class="success-wrap">
+      <div class="success-icon">✅</div>
+      <div class="success-title">Levantamento Salvo!</div>
+      <div class="success-sub" id="tc-summary">Todos os equipamentos foram registrados.</div>
+      <div class="success-id" id="tc-id">LNR-2026-001</div>
+    </div>
+  </div>
+  <div class="bot"><button class="btn btn-primary btn-full" onclick="goTo('t2')">Nova OS →</button></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- DIALOGS                                                 -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="dialog-overlay" id="modal-confirm">
+  <div class="dialog">
+    <div class="dialog-head" id="dlg-title">Confirmar</div>
+    <div class="dialog-body" id="dlg-body">Tem certeza?</div>
+    <div class="dialog-foot">
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeDialog('modal-confirm')">Cancelar</button>
+      <button class="btn btn-danger btn-sm" style="flex:1" id="dlg-confirm-btn">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CAMPOS INCOMPLETOS -->
+<div class="dialog-overlay" id="modal-incompleto">
+  <div class="dialog">
+    <div class="dialog-head">⚠️ Campos não preenchidos</div>
+    <div class="dialog-body">
+      <div id="inc-lista" style="margin-bottom:12px;display:flex;flex-direction:column;gap:6px"></div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.5">Os campos acima foram destacados em laranja. Você pode preencher agora ou continuar mesmo assim.</div>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn btn-ghost btn-sm" style="flex:1" id="inc-btn-preencher" onclick="closeDialog('modal-incompleto')">← Preencher</button>
+      <button class="btn btn-warn btn-sm" style="flex:1" id="inc-btn-continuar">Continuar mesmo assim →</button>
+    </div>
+  </div>
+</div>
+
+<div class="dialog-overlay" id="modal-pendencia">
+  <div class="dialog" style="max-width:560px">
+    <div class="dialog-head">Campo não preenchido</div>
+    <div class="dialog-body">
+      <div id="pend-subtitle" style="margin-bottom:10px;color:var(--text2)"></div>
+      <div id="pend-motivos" style="display:grid;gap:6px;margin-bottom:10px"></div>
+      <textarea id="pend-obs" placeholder="Observação (opcional)" style="width:100%;min-height:80px;background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--text);font-family:var(--body)"></textarea>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeDialog('modal-pendencia')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" style="flex:1" id="pend-confirm-btn">Registrar Pendência</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- BACK GUARD -->
+<div class="back-guard" id="colectBackGuard">
+  <div class="back-guard-box">
+    <h3>⚠️ Sair da coleta?</h3>
+    <p>Existem dados preenchidos ou rascunhos ainda não enviados.<br>O ColectTap salvou localmente, mas confirme antes de sair.</p>
+    <div class="back-guard-actions">
+      <button class="btn-guard-stay"      onclick="guardarColectFicar()">Continuar aqui</button>
+      <button class="btn-guard-save-exit" onclick="guardarColectSalvarSair()">💾 Salvar e sair</button>
+      <button class="btn-guard-leave"     onclick="guardarColectSairSemSalvar()">Sair sem salvar</button>
+    </div>
+  </div>
+</div>
+
+<div id="loadingOverlay"><div class="spinner"></div><div class="loading-txt" id="loadingTxt">Aguarde…</div></div>
+<div id="toast"></div>
+<input type="file" id="fileInputCamera" accept="image/*" capture="environment" style="display:none">
+<input type="file" id="fileInputGallery" accept="image/*" style="display:none">
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════════════
+// URL de produção do ColectTap GAS — manter igual no Field e Manager
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyFERcJg2F-mKO8KgyBVonmw2veKMAYkdWhn9t2cWTlgnNSAsf5iAF6hCbnpiQAy0Iw/exec';
+const APP_VERSION = '2.10';
+
+function esc(v) {
+  return String(v == null ? '' : v)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+function isValidGasUrl(url) {
+  return /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test(String(url || '').trim());
+}
+const AUTOSAVE_INTERVAL_MS = 25000;
+const FOTO_MAX_SIZE = 800;
+const FOTO_JPEG_QUALITY = 0.82;
+
+
+let _dirty = false;
+let _allowLeave = false;
+
+function gerarId4() {
+  return Math.floor(Math.random() * 0x10000).toString(16).padStart(4, '0');
+}
+
+function ensureVisitId() {
+  if (SES.id_visita_colect) return SES.id_visita_colect;
+  const osn = (SES.os && SES.os.numero_os ? SES.os.numero_os : 'SEMOS').replace(/\s+/g, '');
+  const d = new Date();
+  const stamp = d.getFullYear().toString() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0') + '-' + String(d.getHours()).padStart(2,'0') + String(d.getMinutes()).padStart(2,'0') + String(d.getSeconds()).padStart(2,'0');
+  SES.id_visita_colect = `VIS-${osn}-${stamp}-${gerarId4()}`;
+  return SES.id_visita_colect;
+}
+
+function newEquipId() {
+  const osn = (SES.os && SES.os.numero_os ? SES.os.numero_os : 'SEMOS').replace(/\s+/g, '');
+  return `EQ-${osn}-${Date.now()}-${gerarId4()}`;
+}
+
+function ensureEquipId() {
+  if (!SES.currentEquipId) SES.currentEquipId = newEquipId();
+  // Keep legacy field in sync for compat
+  SES.id_equipamento_colect = SES.currentEquipId;
+  return SES.currentEquipId;
+}
+
+function markDirty() { _dirty = true; }
+
+// OBSOLETA — use saveOSDraft()
+function persistCurrentEquipDraft(reason='manual') {
+  if (!SES.os || !SES.os.id_os) return;
+  ensureVisitId();
+  ensureEquipId();
+  const chave = 'colect_os_' + SES.os.id_os;
+  let base = {};
+  try { base = JSON.parse(localStorage.getItem(chave) || '{}'); } catch(e) { base = {}; }
+  const now = new Date().toISOString();
+  const draftEq = {
+    id_equipamento_colect: SES.id_equipamento_colect,
+    tipo: SES.tipoEquip || SES.dados.tipo || '',
+    dados: {...SES.dados},
+    fotos: _stripDataUrls({...SES.fotos}),   // ← sem dataUrl no localStorage
+    pendencias: [...(SES.pendencias || [])],
+    status_completude: 'rascunho',
+    created_at: base.created_at || now,
+    updated_at: now,
+    sync_status: 'local'
+  };
+  const equipamentos = Array.isArray(base.equipamentos) ? base.equipamentos : [];
+  const idx = equipamentos.findIndex(e => e.id_equipamento_colect === draftEq.id_equipamento_colect);
+  if (idx >= 0) equipamentos[idx] = {...equipamentos[idx], ...draftEq}; else equipamentos.push(draftEq);
+  const payload = {
+    id_visita_colect: SES.id_visita_colect, os: SES.os, inspetor: SES.inspetor, equipamentos,
+    updated_at: now, sync_status: 'local', app_version: APP_VERSION, modoColetaInicial: SES.modoColetaInicial || '', reason
+  };
+  localStorage.setItem(chave, JSON.stringify(payload));
+}
+function autosaveDraft(reason='auto', force=false) { if (!force && _dirty !== true) return; captureCurrentScreenState(reason); _dirty = false; }
+function loadDraftsForOS(id_os) {
+  if (!id_os) return null;
+  let data = null;
+  try { data = JSON.parse(localStorage.getItem('colect_os_' + id_os) || 'null'); } catch(e) {}
+  let legacy = [];
+  try { legacy = JSON.parse(localStorage.getItem('colect_equip_' + id_os) || '[]'); } catch(e) {}
+  if (!data) data = { equipamentos: [] };
+  if (!Array.isArray(data.equipamentos)) data.equipamentos = [];
+  legacy.forEach(eq => {
+    const id = eq.id_equipamento_colect || `EQ-${id_os}-${gerarId4()}`;
+    if (!data.equipamentos.some(e => e.id_equipamento_colect === id)) data.equipamentos.push({ id_equipamento_colect:id, tipo:eq.tipo||'', dados:{...eq}, fotos:{...(eq._fotos||{})}, pendencias:[], status_completude:eq._salvo?'salvo':'rascunho', created_at:new Date().toISOString(), updated_at:new Date().toISOString(), sync_status:'legacy' });
+  });
+  return data;
+}
+// obsoleta: fluxo seguro via selectOS
+function restoreDraftIfExists() { return; }
+
+
+const COLECT_PENDING_KEY = 'colect_pending_sync_v1';
+const COLECT_QUEUE_LIMIT = 30;
+const COLECT_QUEUE_WARN_AT = 20;
+const COLECT_SESSIONS_KEY = 'colect_sessions_v1';
+let _autosaveDebounce = null;
+function safeSetJSON(key, value, label='dados') {
+  try { localStorage.setItem(key, JSON.stringify(value)); return {ok:true}; }
+  catch (error) { showToast('⚠️ Falha ao salvar '+label+' no armazenamento local.', 'warn'); return {ok:false,error}; }
+}
+function captureCurrentScreenState(reason='capture') {
+  try {
+    if (currentScreen === 't5') {
+      salvarCampos(secAtualId());
+    }
+    if (SES.os && SES.os.id_os) {
+      saveOSDraft(reason);
+    }
+  } catch(e) {
+    showToast('Falha ao capturar rascunho: ' + e.message, 'err');
+  }
+}
+function debounceAutosave(reason='edit',ms=900){ clearTimeout(_autosaveDebounce); _autosaveDebounce=setTimeout(()=>autosaveDraft(reason,true),ms); }
+function temDadosColectPreenchidos(){ return !!(SES.os || (SES.dados && Object.keys(SES.dados).length) || (SES.equipamentos&&SES.equipamentos.length) || colectGetPending().length); }
+function colectGetPending(){ try{return JSON.parse(localStorage.getItem(COLECT_PENDING_KEY)||'[]')}catch{return []} }
+function colectSavePendingQueue(list){ const r=safeSetJSON(COLECT_PENDING_KEY,list,'fila pendente'); colectUpdatePendingBadge(); return r; }
+function colectPayloadSignature(p){ return [p.id_visita_colect,p.id_os,(p.equipamentos||[]).map(e=>e.id_equipamento_colect).join('|'),p.client_updated_at||p.updated_at||''].join('::'); }
+function colectQueuePayload(payload,reason='offline'){ const q=colectGetPending(); const sig=colectPayloadSignature(payload); const i=q.findIndex(x=>x.signature===sig); const item={signature:sig,payload,reason,updated_at:new Date().toISOString()}; if(i>=0) q[i]=item; else q.unshift(item); if(q.length>COLECT_QUEUE_LIMIT){ showToast('Fila local cheia. Conecte ao GAS para continuar.','err'); return {ok:false}; } if(q.length>=COLECT_QUEUE_WARN_AT) showToast('⚠️ Muitas pendências locais: '+q.length,'warn'); return colectSavePendingQueue(q);}
+async function colectFlushPending(){ const q=colectGetPending(); if(!q.length) return; let rest=[]; for (const it of q){ try{ const r=await gasPost('salvarLevantamentoNR13', it.payload); if(!(r&&r.status==='ok')) rest.push(it);} catch{rest.push(it);} } colectSavePendingQueue(rest); if(!rest.length) showToast('✅ Pendências reenviadas com sucesso.'); }
+function colectUpdatePendingBadge(){}
+
+// ═══════════════════════════════════════════════════════════════
+// ESTADO DA SESSÃO
+// ═══════════════════════════════════════════════════════════════
+const SES = {
+  inspetor: null,
+  os: null,
+  _osList: [],
+  equipamentos: [],       // equipamentos coletados nesta OS (local)
+  equipEdit: null,        // índice do equipamento em edição
+  tipoEquip: null,        // 'vaso'|'caldeira'|'tubulacao'|'tanque'
+  secAtual: 0,            // seção atual do formulário
+  dados: {},              // campos do formulário em andamento
+  fotos: {},              // { campo: { dataUrl, w, h } }
+  history: [],
+  pendencias: [],
+  currentEquipId: null,   // id único do equipamento em edição
+  id_visita_colect: null,
+  modoColetaInicial: null,      // 'campo' | 'documento' — escolhido na tela T4b
+  origemRespostas: {},          // { campo_id: { origem: 'campo'|'documento'|'hibrido', ... } }
+};
+
+// ── HELPER: seção atual do fluxo ──────────────────────────────
+function getSecoesFluxo() {
+  const modo = SES.modoColetaInicial || (SES.dados && SES.dados.modo_coleta_inicial) || 'campo';
+  const base = {
+    enquadramento: { id:'enquadramento', label:'Enquadramento NR13',       icon:'⚖️',  pct:100, origem:'hibrido'   },
+    ident:         { id:'ident',         label:'Identificação / Placa',    icon:'🏷️',  pct:15,  origem:'campo'     },
+    docs:          { id:'docs',          label:'Documentação',             icon:'📁',  pct:30,  origem:'documento' },
+    projeto:       { id:'projeto',       label:'Dados de Projeto',         icon:'📐',  pct:45,  origem:'documento' },
+    dimensoes:     { id:'dimensoes',     label:'Dimensões',                icon:'📏',  pct:60,  origem:'campo'     },
+    disp:          { id:'disp',          label:'Dispositivos de Seg.',     icon:'🔒',  pct:75,  origem:'campo'     },
+    servico:       { id:'servico',       label:'Instalação e Acesso',      icon:'⚠️',  pct:88,  origem:'campo'     },
+    obs:           { id:'obs',           label:'Obs / Fotos / Revisão',    icon:'📷',  pct:100, origem:'hibrido'   },
+  };
+  if (modo === 'documento') {
+    return [
+      { ...base.enquadramento, pct:13 }, { ...base.docs, pct:26 }, { ...base.projeto, pct:40 },
+      { ...base.ident, pct:55 }, { ...base.dimensoes, pct:68 }, { ...base.disp, pct:80 },
+      { ...base.servico, pct:91 }, { ...base.obs, pct:100 },
+    ];
+  }
+  return [
+    { ...base.enquadramento, pct:13 }, { ...base.ident, pct:26 }, { ...base.dimensoes, pct:40 },
+    { ...base.disp, pct:55 }, { ...base.servico, pct:68 }, { ...base.obs, pct:80 },
+    { ...base.docs, pct:91 }, { ...base.projeto, pct:100 },
+  ];
+}
+function secAtualObj() { return getSecoesFluxo()[SES.secAtual] || getSecoesFluxo()[0]; }
+function secAtualId() { return secAtualObj().id; }
+
+// Seções por tipo de equipamento
+function getSecoes(tipo) {
+  const comuns = [
+    { id:'ident',    label:'A — Identificação',         icon:'🏷️'  },
+    { id:'projeto',  label:'B — Dados de Projeto',      icon:'📐'  },
+    { id:'dimensoes',label:'C — Dimensões',             icon:'📏'  },
+    { id:'disp',     label:'D — Dispositivos de Seg.',  icon:'🔒'  },
+    { id:'docs',     label:'E — Documentação',          icon:'📁'  },
+    { id:'servico',  label:'F — Condições de Serviço',  icon:'⚠️'  },
+    { id:'obs',      label:'G — Observações e Foto',    icon:'📷'  },
+  ];
+  return comuns; // todas as seções para todos os tipos (campos variam dentro)
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DEMO DATA
+// ═══════════════════════════════════════════════════════════════
+function getDemoOS() {
+  return [
+    { id_os:'LNR-2026-001', numero_os:'LNR-001', cliente:'Inglesa — Mineração', id_cliente:'CLI-ING', descricao:'Levantamento NR-13 completo', data_abertura:'2026-05-13', status:'ativa' },
+    { id_os:'LNR-2026-002', numero_os:'LNR-002', cliente:'Farmax Farmacêutica', id_cliente:'CLI-FAR', descricao:'Inspeção inicial NR-13', data_abertura:'2026-05-10', status:'ativa' },
+  ];
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GAS API
+// ═══════════════════════════════════════════════════════════════
+const DEMO_MODE = !GAS_URL || GAS_URL.includes('COLE_AQUI');
+
+async function gasGet(action, params={}) {
+  if (!isValidGasUrl(GAS_URL)) throw new Error('URL GAS inválida');
+  const url = new URL(GAS_URL);
+  url.searchParams.set('action', action);
+  url.searchParams.set('_ts', Date.now());
+  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+  const mkFetch = () => Promise.race([
+    fetch(url, { redirect:'follow', cache:'no-store' }),
+    new Promise((_,rej) => setTimeout(() => rej(new Error('timeout')), 18000))
+  ]);
+  let resp;
+  try { resp = await mkFetch(); }
+  catch(e) { await new Promise(r => setTimeout(r, 800)); resp = await mkFetch(); }
+  const text = await resp.text();
+  try { return JSON.parse(text); }
+  catch(e) { throw new Error('Resposta inválida do GAS: ' + text.substring(0,120)); }
+}
+
+async function gasPost(action, data={}) {
+  if (!isValidGasUrl(GAS_URL)) throw new Error('URL GAS inválida');
+  const url = new URL(GAS_URL);
+  url.searchParams.set('action', action);
+  const r = await Promise.race([
+    fetch(url, { method:'POST', body:JSON.stringify({action,...data}), redirect:'follow' }),
+    new Promise((_,rej) => setTimeout(() => rej(new Error('timeout')), 25000))
+  ]);
+  return r.json();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GAS STATUS
+// ═══════════════════════════════════════════════════════════════
+function setGASStatus(state, label) {
+  const dot = document.getElementById('gasDot');
+  const lbl = document.getElementById('gasLabel');
+  if (dot) { dot.className = 'gas-dot' + (state ? ' '+state : ''); }
+  if (lbl) lbl.textContent = label;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NAVEGAÇÃO
+// ═══════════════════════════════════════════════════════════════
+let currentScreen = 't1';
+let _navLock = false;
+let _pendingScreen = null;
+
+function goTo(id) {
+  if (currentScreen === 't5' && id !== 't5') _pararWatcherScroll();
+  const next = document.getElementById('scr-' + id);
+  if (!next) { console.error('goTo: tela não encontrada:', id); return; }
+  if (id === currentScreen) return;
+  if (_navLock) { _pendingScreen = id; return; }
+  _navLock = true;
+
+  // v2.10: reset ANTES do setTimeout — elimina race condition com blur/visibilitychange
+  // que podem disparar autosaveDraft durante os 220ms da animação e inserir rascunhos duplicados
+  if (id === 't3' && SES.os) {
+    SES.equipEdit             = null;
+    SES.currentEquipId        = null;
+    SES.id_equipamento_colect = null;
+    SES.dados                 = {};
+    SES.fotos                 = {};
+    SES.pendencias            = [];
+    SES.tipoEquip             = null;
+    SES.origemRespostas       = {};
+  }
+
+  const prev = document.getElementById('scr-' + currentScreen);
+  if (prev) prev.classList.add('out');
+  setTimeout(() => {
+    document.querySelectorAll('.screen').forEach(s => {
+      s.classList.add('hidden');
+      s.classList.remove('out');
+    });
+    next.classList.remove('hidden');
+    currentScreen = id;
+    _navLock = false;
+    if (_pendingScreen && _pendingScreen !== currentScreen) {
+      const p = _pendingScreen;
+      _pendingScreen = null;
+      goTo(p);
+    } else {
+      _pendingScreen = null;
+    }
+  }, 220);
+}
+
+function goBack() {
+  if (SES.history.length > 0) goTo(SES.history.pop());
+}
+
+function push(id) { SES.history.push(currentScreen); goTo(id); }
+
+// ═══════════════════════════════════════════════════════════════
+// TOAST & LOADING
+// ═══════════════════════════════════════════════════════════════
+let _toastTimer;
+function showToast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (type!=='ok' ? ' '+type : '');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { t.className = ''; }, 3200);
+}
+
+function showLoading(txt='Aguarde…') {
+  document.getElementById('loadingTxt').textContent = txt;
+  document.getElementById('loadingOverlay').classList.add('open');
+}
+function hideLoading() { document.getElementById('loadingOverlay').classList.remove('open'); }
+
+// ═══════════════════════════════════════════════════════════════
+// DIALOG
+// ═══════════════════════════════════════════════════════════════
+function openDialog(title, body, confirmLabel, onConfirm, dangerous=true) {
+  document.getElementById('dlg-title').textContent = title;
+  document.getElementById('dlg-body').textContent = body;
+  const btn = document.getElementById('dlg-confirm-btn');
+  btn.textContent = confirmLabel;
+  btn.className = 'btn btn-sm ' + (dangerous ? 'btn-danger' : 'btn-ok');
+  btn.onclick = () => { closeDialog('modal-confirm'); onConfirm(); };
+  document.getElementById('modal-confirm').classList.add('open');
+}
+function closeDialog(id) { document.getElementById(id).classList.remove('open'); }
+
+// ═══════════════════════════════════════════════════════════════
+// PIN / LOGIN
+// ═══════════════════════════════════════════════════════════════
+let pin = '';
+let _loginInProgress = false;
+
+function keyPress(d) {
+  if (pin.length >= 4) return;
+  pin += d;
+  updateDots();
+  if (pin.length === 4) {
+    document.getElementById('pinStatus').textContent = 'PIN preenchido. Toque em ✓ para entrar.';
+  }
+}
+function keyDel() { if (pin.length) { pin = pin.slice(0,-1); updateDots(); if (pin.length < 4) document.getElementById('pinStatus').textContent = 'Digite seu PIN de 4 dígitos'; } }
+function updateDots() {
+  for (let i=0;i<4;i++) document.getElementById('pd'+i).className = 'pin-dot' + (i < pin.length ? ' filled' : '');
+}
+
+async function keyOk() {
+  if (pin.length < 4) return;
+  if (_loginInProgress) return;
+  _loginInProgress = true;
+  document.getElementById('pinStatus').textContent = 'Verificando…';
+  if (DEMO_MODE) {
+    if (pin === '1234') { SES.inspetor = {id_inspetor:'INS-001', nome:'Inspetor Demo'}; _loginInProgress = false; afterLogin(); history.pushState({colecttap_guard:true},""); }
+    else if (pin === '5678') { SES.inspetor = {id_inspetor:'INS-002', nome:'Fernando Guimarães'}; _loginInProgress = false; afterLogin(); history.pushState({colecttap_guard:true},""); }
+    else { _loginInProgress = false; pinError(); }
+    return;
+  }
+  try {
+    const r = await gasGet('validarPIN', {pin, app:'field'});
+    if (r && r.status === 'ok' && r.valido === true && (r.id_inspetor || (r.usuario && r.usuario.id))) {
+      SES.inspetor = {id_inspetor: r.id_inspetor || (r.usuario && r.usuario.id) || '', nome: r.nome || (r.usuario && r.usuario.nome) || ''};
+      _loginInProgress = false;
+      afterLogin(); history.pushState({colecttap_guard:true},"");
+    } else {
+      _loginInProgress = false;
+      pinError();
+    }
+  } catch(e) {
+    // GAS indisponível: NÃO entrar em demo se GAS_URL estiver configurada
+    _loginInProgress = false;
+    document.getElementById('pinStatus').textContent = 'GAS indisponível. Verifique a conexão.';
+    setTimeout(() => { pin=''; updateDots(); document.getElementById('pinStatus').textContent = 'Digite seu PIN de 4 dígitos'; }, 2000);
+  }
+}
+
+function pinError() {
+  for (let i=0;i<4;i++) document.getElementById('pd'+i).className = 'pin-dot err';
+  document.getElementById('pinStatus').textContent = 'PIN inválido';
+  setTimeout(() => { pin=''; updateDots(); document.getElementById('pinStatus').textContent = 'Digite seu PIN de 4 dígitos'; }, 1200);
+}
+
+async function afterLogin() {
+  setGASStatus('spin','Carregando OS…');
+  if (DEMO_MODE) {
+    SES._osList = getDemoOS();
+    setGASStatus('', 'Modo demo local');
+    renderT2();
+    return;
+  }
+  try {
+    const r = await gasGet('getOSColect', {id_inspetor: SES.inspetor.id_inspetor});
+    if (r.status === 'ok') SES._osList = r.os || [];
+    setGASStatus('ok','GAS conectado ✓');
+  } catch(e) {
+    SES._osList = [];
+    setGASStatus('err','Falha ao carregar OS');
+    document.getElementById('t2-body').innerHTML =
+      '<div class="empty-state"><div class="ei">⚠️</div><p>Falha ao carregar OS da GAS.<br>Verifique conexão, implantação ou permissões do Web App.</p></div>';
+    goTo('t2');
+    return;
+  }
+  renderT2();
+}
+
+async function atualizarOS() {
+  if (!SES.inspetor) return;
+  if (DEMO_MODE) { SES._osList = getDemoOS(); renderT2(); return; }
+  setGASStatus('spin','Atualizando…');
+  try {
+    const r = await gasGet('getOSColect', {id_inspetor: SES.inspetor.id_inspetor});
+    if (r.status === 'ok') SES._osList = r.os || [];
+    setGASStatus('ok','GAS conectado ✓');
+    renderT2();
+    showToast('OS atualizadas ✓');
+  } catch(e) { setGASStatus('err','Falha ao atualizar'); showToast('Falha ao atualizar','err'); }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// T2 — LISTA DE OS
+// ═══════════════════════════════════════════════════════════════
+function renderT2() {
+  document.getElementById('t2-inspector').textContent = SES.inspetor ? SES.inspetor.nome : '';
+  const body = document.getElementById('t2-body');
+  if (!SES._osList || !SES._osList.length) {
+    body.innerHTML = '<div class="empty-state"><div class="ei">📋</div><p>Nenhuma OS disponível</p></div>';
+    goTo('t2');
+    return;
+  }
+  body.innerHTML = SES._osList.map(os => {
+    // Lê rascunho local para mostrar contador de equipamentos
+    const draft = loadDraftsForOS(os.id_os);
+    const equips = (draft && Array.isArray(draft.equipamentos)) ? draft.equipamentos : [];
+    const total = equips.length;
+    const salvos = equips.filter(e => e.status_completude && e.status_completude !== 'rascunho').length;
+    const iniciada = total > 0;
+    const equipPill = iniciada
+      ? `<span class="pill ${salvos > 0 ? 'pill-ok' : 'pill-warn'}">⚙️ ${salvos}/${total} equip.</span>`
+      : '';
+    const statusPill = iniciada
+      ? `<span class="pill pill-pend" style="font-size:10px">▶ OS iniciada</span>`
+      : '';
+    return `
+    <div class="os-card" onclick="selectOS('${os.id_os}')" style="${iniciada ? 'border-color:var(--pend)' : ''}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+        <div class="os-num">${os.numero_os}</div>
+        ${iniciada ? `<div style="font-size:11px;font-weight:700;color:var(--pend);white-space:nowrap;padding-top:3px">▶ Iniciada</div>` : ''}
+      </div>
+      <div class="os-cli">${os.cliente}</div>
+      <div class="os-desc">${os.descricao || ''}</div>
+      <div class="os-meta">
+        <span class="pill pill-blue">🔬 NR-13</span>
+        <span class="pill pill-gray">📅 ${formatDate(os.data_abertura)}</span>
+        ${equipPill}
+      </div>
+    </div>`;
+  }).join('');
+  goTo('t2');
+}
+
+function formatDate(d) {
+  if (!d) return '—';
+  try { return new Date(d).toLocaleDateString('pt-BR'); } catch { return d; }
+}
+
+function selectOS(id) {
+  SES.os = SES._osList.find(o => o.id_os === id);
+  if (!SES.os) return;
+  // Carrega equipamentos salvos localmente para esta OS usando formato estruturado
+  const draft = loadDraftsForOS(id);
+  if (draft && Array.isArray(draft.equipamentos) && draft.equipamentos.length) {
+    SES.equipamentos = (draft.equipamentos || []).map(e => {
+      const sc = e.status_completude || 'rascunho';
+      const ss = e.sync_status || 'local';
+      return {
+        ...(e.dados || {}),
+        modo_coleta_inicial: (e.dados && e.dados.modo_coleta_inicial) || e.modoColetaInicial || 'campo',
+        id_equipamento_colect: e.id_equipamento_colect,
+        tipo: e.tipo || (e.dados && e.dados.tipo) || '',
+        _fotos: e.fotos || {},
+        _pendencias: e.pendencias || [],
+        _salvo: sc !== 'rascunho',
+        _nao_enquadrado: sc === 'nao_enquadrado',
+        status_completude: sc,
+        sync_status: ss,
+        synced_at: e.synced_at || null,
+        drive_folder_url: e.drive_folder_url || null,
+        drive_folder_id: e.drive_folder_id || null,
+        created_at: e.created_at || null,
+      };
+    });
+  } else {
+    SES.equipamentos = [];
+  }
+  if (draft && draft.id_visita_colect) SES.id_visita_colect = draft.id_visita_colect;
+  if (draft && draft.modoColetaInicial) SES.modoColetaInicial = draft.modoColetaInicial;
+  renderT3();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// T3 — EQUIPAMENTOS DA OS
+// ═══════════════════════════════════════════════════════════════
+function renderT3() {
+  // Limpar estado de edição em andamento para evitar duplicatas no autosave
+  SES.equipEdit = null;
+  SES.currentEquipId = null;
+  SES.id_equipamento_colect = null;
+  SES.dados = {};
+  SES.fotos = {};
+  SES.pendencias = [];
+  SES.tipoEquip = null;
+  SES.modoColetaInicial = null;
+  SES.origemRespostas = {};
+
+  document.getElementById('t3-os-num').textContent = SES.os.numero_os;
+  document.getElementById('t3-cliente').textContent = SES.os.cliente;
+  const total = SES.equipamentos.length;
+  const feitos = SES.equipamentos.filter(e => e._salvo).length;
+  document.getElementById('t3-badge').textContent = feitos + '/' + total;
+  const body = document.getElementById('t3-body');
+  if (!total) {
+    body.innerHTML = '<div class="empty-state"><div class="ei">🔍</div><p>Nenhum equipamento ainda.<br>Toque em "+ Novo Equipamento"</p></div>';
+  } else {
+    body.innerHTML = SES.equipamentos.map((eq, idx) => {
+      const tag = eq.tag || eq.numero_equip || ('EQ-' + (idx+1));
+      const tipo = labelTipo(eq.tipo);
+      const done = eq._salvo;
+      const naoEnq = eq._nao_enquadrado || eq.status_completude === 'nao_enquadrado';
+      return `<div class="equip-card ${done?'done':''}" style="display:flex;align-items:flex-start;gap:10px">
+        <div style="flex:1;min-width:0" onclick="editarEquip(${idx})">
+          <div class="ec-tag">${esc(tag)}</div>
+          <div class="ec-tipo">${esc(tipo)}${eq.fabricante ? ' · ' + esc(eq.fabricante) : ''}</div>
+          <div class="ec-status">
+            ${naoEnq ? '<span class="pill pill-warn">⚠️ Não enquadrado NR13</span>' : done ? '<span class="pill pill-ok">✓ Completo</span>' : '<span class="pill pill-warn">⏳ Em andamento</span>'}
+            ${!naoEnq && eq.categoria ? '<span class="pill pill-blue">Cat. ' + esc(eq.categoria) + '</span>' : ''}
+            ${eq.possui_foto ? '<span class="pill pill-gray">📷</span>' : ''}
+          </div>
+        </div>
+        <button class="ec-del" onclick="confirmarApagarEquip(${idx})" title="Apagar equipamento">🗑️</button>
+      </div>`;
+    }).join('');
+  }
+  goTo('t3');
+}
+
+function labelTipo(t) {
+  return {vaso:'Vaso de Pressão',caldeira:'Caldeira',tubulacao:'Tubulação',tanque:'Tanque Metálico'}[t] || t || '—';
+}
+
+function confirmarApagarEquip(idx) {
+  const eq = SES.equipamentos[idx];
+  const tag = eq.tag || eq.numero_equip || ('EQ-' + (idx+1));
+  openDialog(
+    'Apagar equipamento?',
+    `"${tag}" será removido desta OS. Esta ação não pode ser desfeita.`,
+    '🗑️ Apagar',
+    () => {
+      SES.equipamentos.splice(idx, 1);
+      saveOSDraft('apagar-equip');
+      showToast('Equipamento removido.');
+      renderT3();
+    },
+    true
+  );
+}
+
+function abrirNovoEquip() {
+  SES.equipEdit = null;
+  SES.currentEquipId = newEquipId();
+  SES.id_equipamento_colect = SES.currentEquipId;
+  SES.dados = { id_equipamento_colect: SES.currentEquipId };
+  SES.fotos = {};
+  SES.secAtual = 0;
+  SES.pendencias = [];
+  SES.tipoEquip = null;
+  SES.modoColetaInicial = null;
+  SES.origemRespostas = {};
+  goTo('t4');
+}
+
+function editarEquip(idx) {
+  const eq = SES.equipamentos[idx];
+  SES.equipEdit = idx;
+  SES.currentEquipId = eq.id_equipamento_colect || newEquipId();
+  SES.id_equipamento_colect = SES.currentEquipId;
+  SES.dados = { ...eq, id_equipamento_colect: SES.currentEquipId };
+  if (!SES.dados.modo_coleta_inicial) {
+    SES.modoColetaInicial = 'campo';
+    SES.dados.modo_coleta_inicial = 'campo';
+  } else {
+    SES.modoColetaInicial = SES.dados.modo_coleta_inicial;
+  }
+  SES.tipoEquip = SES.dados.tipo;
+  SES.fotos = SES.dados._fotos || {};
+  SES.pendencias = eq._pendencias || [];
+  SES.secAtual = 0;
+  renderT5();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// T4 — TIPO DO EQUIPAMENTO
+// ═══════════════════════════════════════════════════════════════
+function selectTipoEquip(tipo) {
+  SES.tipoEquip = tipo;
+  SES.dados.tipo = tipo;
+  SES.secAtual = 0;
+  document.getElementById('t4b-tipo-label').textContent = labelTipo(tipo);
+  goTo('t4b');
+}
+
+function selecionarModoColeta(modo) {
+  SES.modoColetaInicial = modo;
+  SES.dados.modo_coleta_inicial = modo;
+  SES.dados.status_coleta_campo = SES.dados.status_coleta_campo || 'nao_iniciada';
+  SES.dados.status_coleta_documentos = SES.dados.status_coleta_documentos || 'nao_iniciada';
+  const agora = new Date().toISOString();
+  if (modo === 'campo' && !SES.dados.data_primeira_coleta_campo) {
+    SES.dados.data_primeira_coleta_campo = agora;
+  }
+  if (modo === 'documento' && !SES.dados.data_primeira_coleta_documentos) {
+    SES.dados.data_primeira_coleta_documentos = agora;
+  }
+  SES.secAtual = 0;
+  markDirty();
+  renderT5();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// T5 — FORMULÁRIO POR SEÇÕES
+// ═══════════════════════════════════════════════════════════════
+// Array legado mantido apenas para compatibilidade; a fonte de verdade é getSecoesFluxo().
+const SECS_LEGADO = [
+  { id:'enquadramento', label:'A — Enquadramento NR13',      icon:'⚖️',  pct:12  },
+  { id:'ident',         label:'B — Identificação / Placa',   icon:'🏷️',  pct:24  },
+  { id:'docs',          label:'C — Documentação',            icon:'📁',  pct:36  },
+  { id:'projeto',       label:'D — Dados de Projeto',        icon:'📐',  pct:48  },
+  { id:'dimensoes',     label:'E — Dimensões',               icon:'📏',  pct:60  },
+  { id:'disp',          label:'F — Dispositivos de Seg.',    icon:'🔒',  pct:72  },
+  { id:'servico',       label:'G — Instalação e Acesso',     icon:'⚠️',  pct:84  },
+  { id:'obs',           label:'H — Obs / Fotos / Revisão',   icon:'📷',  pct:100 },
+];
+
+// ── CAMPOS RECOMENDADOS POR SEÇÃO ──
+const CAMPOS_RECOMENDADOS = {
+  enquadramento: [
+    { id:'toggle:enquadra_nr13', label:'Enquadramento NR13', origem:'hibrido' },
+  ],
+  ident: [
+    { id:'f_tag', label:'TAG / Código de Identificação', origem:'campo' },
+    { id:'f_fabricante', label:'Fabricante', origem:'campo' },
+    { id:'f_categoria', label:'Categoria NR-13', origem:'hibrido' },
+    { id:'toggle:placa_indelevel', label:'Placa de identificação indelével', origem:'campo' },
+  ],
+  projeto: [
+    { id:'f_pmta', label:'PMTA (kgf/cm²)', origem:'documento' },
+    { id:'f_fluido', label:'Fluido de Trabalho', origem:'documento' },
+    { id:'f_classe_fluido', label:'Classe do Fluido', origem:'documento' },
+  ],
+  dimensoes: [],
+  disp: [
+    { id:'toggle:possui_manometro', label:'Possui manômetro?', origem:'campo' },
+    { id:'toggle:possui_valvula', label:'Possui válvula de segurança (PSV)?', origem:'campo' },
+  ],
+  docs: [],
+  servico: [
+    { id:'toggle:trabalho_altura', label:'Requer trabalho em altura?', origem:'campo' },
+  ],
+  obs: [],
+};
+
+function validarSecaoAtual() {
+  const secId = secAtualId();
+  const obrig = CAMPOS_RECOMENDADOS[secId] || [];
+  const faltando = { campo: [], documento: [], hibrido: [] };
+
+  obrig.forEach(c => {
+    let vazio;
+    if (c.id.startsWith('toggle:')) {
+      const key = c.id.replace('toggle:', '');
+      vazio = !SES.dados[key];
+    } else {
+      const el = document.getElementById(c.id);
+      vazio = el && !el.value.trim();
+    }
+    if (vazio) {
+      const grupo = c.origem || 'campo';
+      faltando[grupo].push(c);
+    }
+  });
+  return faltando;
+}
+
+function temCamposFaltando(faltando) {
+  return faltando.campo.length + faltando.documento.length + faltando.hibrido.length > 0;
+}
+
+// Destaca campos incompletos no DOM
+function destacarCamposIncompletos(lista) {
+  document.querySelectorAll('#t5-body .field.campo-incompleto').forEach(el => el.classList.remove('campo-incompleto'));
+  document.getElementById('t5-body').querySelectorAll('.campo-incompleto-banner').forEach(el => el.remove());
+
+  if (!lista.length) return;
+
+  lista.forEach(c => {
+    let el;
+    if (c.id.startsWith('toggle:')) {
+      const key = c.id.replace('toggle:', '');
+      const toggleEl = document.querySelector(`#t5-body .toggle-opt[data-id="${key}"]`);
+      el = toggleEl ? toggleEl.closest('.field') : null;
+    } else {
+      const input = document.getElementById(c.id);
+      el = input ? input.closest('.field') : null;
+    }
+    if (el) el.classList.add('campo-incompleto');
+  });
+
+  const banner = document.createElement('div');
+  banner.className = 'campo-incompleto-banner';
+  banner.innerHTML = `⚠️ <span>${lista.length} campo(s) recomendado(s) não preenchido(s). Role para ver os destaques em laranja.</span>`;
+  const body = document.getElementById('t5-body');
+  body.prepend(banner);
+  body.scrollTop = 0;
+}
+function isNaoEnquadrado() {
+  return SES.dados.enquadra_nr13 === 'Não enquadra conforme 13.2.2';
+}
+
+let _scrollWatcherActive = false;
+
+function _iniciarWatcherScroll() {
+  const body  = document.getElementById('t5-body');
+  const hint  = document.getElementById('t5-scroll-hint');
+  const btnNext = document.getElementById('t5-btn-next');
+  if (!body || !hint || !btnNext) return;
+
+  _scrollWatcherActive = true;
+
+  function _checarScroll() {
+    if (!_scrollWatcherActive) return;
+    const temScroll = body.scrollHeight > body.clientHeight + 24;
+    const chegouFim = body.scrollTop + body.clientHeight >= body.scrollHeight - 24;
+
+    if (!temScroll || chegouFim) {
+      hint.classList.add('hidden');
+      btnNext.classList.remove('has-scroll');
+    } else {
+      hint.classList.remove('hidden');
+      btnNext.classList.add('has-scroll');
+    }
+  }
+
+  if (body._scrollHandler) body.removeEventListener('scroll', body._scrollHandler);
+  body._scrollHandler = _checarScroll;
+  body.addEventListener('scroll', _checarScroll, { passive: true });
+  requestAnimationFrame(() => setTimeout(_checarScroll, 80));
+}
+
+function _pararWatcherScroll() {
+  _scrollWatcherActive = false;
+  const body = document.getElementById('t5-body');
+  if (body && body._scrollHandler) {
+    body.removeEventListener('scroll', body._scrollHandler);
+    body._scrollHandler = null;
+  }
+  const hint = document.getElementById('t5-scroll-hint');
+  const btnNext = document.getElementById('t5-btn-next');
+  if (hint) hint.classList.add('hidden');
+  if (btnNext) btnNext.classList.remove('has-scroll');
+}
+
+function renderT5() {
+  const sec = secAtualObj();
+  const fluxo = getSecoesFluxo();
+  document.getElementById('t5-tipo-label').textContent = labelTipo(SES.tipoEquip);
+  document.getElementById('t5-os-label').textContent = SES.os ? SES.os.numero_os : '—';
+  document.getElementById('t5-badge').textContent = SES.equipEdit !== null ? 'Editando' : 'Novo';
+
+  const naoEnq = secAtualId() === 'enquadramento' && isNaoEnquadrado();
+  if (naoEnq) {
+    document.getElementById('t5-progress').style.width = '100%';
+    document.getElementById('t5-progress-lbl').textContent = '⚠️ Registro de não enquadramento — etapa única';
+  } else {
+    document.getElementById('t5-progress').style.width = sec.pct + '%';
+    document.getElementById('t5-progress-lbl').textContent = sec.icon + ' ' + sec.label + ' (' + (SES.secAtual + 1) + '/' + fluxo.length + ')';
+  }
+
+  document.getElementById('t5-btn-back').style.opacity = SES.secAtual === 0 ? '.3' : '1';
+  document.getElementById('t5-btn-back').disabled = SES.secAtual === 0;
+  document.getElementById('t5-btn-next').textContent = naoEnq ? '✓ Revisar / Finalizar' : (SES.secAtual === fluxo.length - 1 ? '✓ Revisar' : 'Próximo →');
+
+  const modo = SES.modoColetaInicial || SES.dados.modo_coleta_inicial || 'campo';
+  document.getElementById('t5-modo-icon').textContent = modo === 'documento' ? '📁' : '🔧';
+  document.getElementById('t5-modo-label').textContent = modo === 'documento' ? 'Fluxo: Documentação' : 'Fluxo: Equipamento em campo';
+
+  // Origem da seção atual — determina o label do botão de alternância
+  const origemSec = sec.origem || 'hibrido';
+  document.getElementById('t5-origem-sec').textContent = { campo:'🔧 Campo', documento:'📁 Documento', hibrido:'⚖️ Híbrido' }[origemSec] || '';
+
+  // O botão mostra PARA ONDE ir: se a seção atual é de campo → oferecer "Ir para docs"; se é de docs → "Ir para campo"
+  // Para seções híbridas ou enquadramento: usa o oposto do modo atual
+  let btnAlternarText;
+  if (origemSec === 'campo') {
+    btnAlternarText = '📁 Ir para docs';
+  } else if (origemSec === 'documento') {
+    btnAlternarText = '🔧 Ir para campo';
+  } else {
+    // hibrido: usa oposto do modo atual
+    btnAlternarText = modo === 'documento' ? '🔧 Ir para campo' : '📁 Ir para docs';
+  }
+  document.getElementById('t5-btn-alternar').textContent = btnAlternarText;
+
+  const body = document.getElementById('t5-body');
+  body.innerHTML = renderSecao(sec.id);
+  restaurarCampos(sec.id);
+  body.scrollTop = 0;
+  _iniciarWatcherScroll();
+  goTo('t5');
+}
+
+function secNext() {
+  markDirty();
+  salvarCampos(secAtualId());
+
+  if (secAtualId() === 'enquadramento' && isNaoEnquadrado()) {
+    SES.dados._nao_enquadrado = true;
+    SES.dados.status_completude = 'nao_enquadrado';
+    renderT6();
+    return;
+  }
+
+  const faltando = validarSecaoAtual();
+  if (temCamposFaltando(faltando)) {
+    const todos = [...faltando.campo, ...faltando.documento, ...faltando.hibrido];
+    destacarCamposIncompletos(todos);
+    let listaHTML = '';
+    const adicionarGrupo = (lista, icone, rotulo) => {
+      if (!lista.length) return;
+      listaHTML += `<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin:8px 0 4px">${icone} ${rotulo}</div>`;
+      lista.forEach(c => {
+        listaHTML += `<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);padding:3px 0"><span style="color:var(--warn)">⚠️</span><span>${c.label}</span></div>`;
+      });
+    };
+    adicionarGrupo(faltando.campo, '🔧', 'Campo');
+    adicionarGrupo(faltando.documento, '📁', 'Documental');
+    adicionarGrupo(faltando.hibrido, '⚖️', 'Híbrido');
+    document.getElementById('inc-lista').innerHTML = listaHTML;
+
+    const temSoDocumental = faltando.campo.length === 0 && faltando.hibrido.length === 0 && faltando.documento.length > 0;
+    const temSoCampo = faltando.documento.length === 0 && faltando.hibrido.length === 0 && faltando.campo.length > 0;
+    let textoBotaoContinuar = 'Continuar e registrar pendência →';
+    if (temSoDocumental) textoBotaoContinuar = '📁 Registrar como pendência documental →';
+    if (temSoCampo) textoBotaoContinuar = '🔧 Registrar como pendência de campo →';
+    document.getElementById('inc-btn-continuar').textContent = textoBotaoContinuar;
+    document.getElementById('inc-btn-continuar').onclick = () => {
+      closeDialog('modal-incompleto');
+      _registrarPendenciasFaltando(faltando);
+      _secNextExecutar();
+    };
+    document.getElementById('modal-incompleto').classList.add('open');
+    return;
+  }
+
+  _secNextExecutar();
+}
+
+function _registrarPendenciasFaltando(faltando) {
+  if (faltando.campo.length > 0 || faltando.hibrido.length > 0) {
+    const novos = [...faltando.campo, ...faltando.hibrido].map(c => c.label);
+    const existentes = SES.dados.pendencias_campo ? SES.dados.pendencias_campo.split('; ') : [];
+    const set = new Set([...existentes, ...novos]);
+    SES.dados.pendencias_campo = [...set].join('; ');
+    SES.dados.status_coleta_campo = 'parcial';
+  }
+  if (faltando.documento.length > 0) {
+    const novos = faltando.documento.map(c => c.label);
+    const existentes = SES.dados.pendencias_documentais ? SES.dados.pendencias_documentais.split('; ') : [];
+    const set = new Set([...existentes, ...novos]);
+    SES.dados.pendencias_documentais = [...set].join('; ');
+    SES.dados.status_coleta_documentos = 'parcial';
+  }
+}
+
+function _secNextExecutar() {
+  document.querySelectorAll('#t5-body .field.campo-incompleto').forEach(el => el.classList.remove('campo-incompleto'));
+  const fluxo = getSecoesFluxo();
+  if (SES.secAtual < fluxo.length - 1) {
+    SES.secAtual++;
+    renderT5();
+  } else {
+    renderT6();
+  }
+}
+
+function secBack() {
+  markDirty();
+  if (SES.secAtual === 0) return;
+  salvarCampos(secAtualId());
+  SES.secAtual--;
+  renderT5();
+}
+
+function alternarModoColeta() {
+  salvarCampos(secAtualId());
+  const modoAtual = SES.modoColetaInicial || SES.dados.modo_coleta_inicial || 'campo';
+  const secIdAtual = secAtualObj().id;
+  const novoModo = modoAtual === 'campo' ? 'documento' : 'campo';
+  SES.modoColetaInicial = novoModo;
+  SES.dados.modo_coleta_inicial = novoModo;
+  SES.dados.data_ultima_alternancia_fluxo = new Date().toISOString();
+  const novoFluxo = getSecoesFluxo();
+
+  // Vai SEMPRE para a primeira seção exclusiva do novo modo,
+  // evitando ficar na mesma seção quando ela existe em ambos os fluxos.
+  const origemDestino = novoModo === 'documento' ? 'documento' : 'campo';
+  let novoIdx = novoFluxo.findIndex(s => s.origem === origemDestino);
+  if (novoIdx < 0) {
+    // Fallback: tenta manter a seção atual se existir no novo fluxo
+    novoIdx = novoFluxo.findIndex(s => s.id === secIdAtual);
+    if (novoIdx < 0) novoIdx = 1; // pós-enquadramento
+  }
+  SES.secAtual = novoIdx;
+  markDirty();
+  renderT5();
+  showToast(novoModo === 'documento' ? '📁 Modo documentação ativado' : '🔧 Modo campo ativado');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SEÇÕES — HTML GERADO DINAMICAMENTE
+// ═══════════════════════════════════════════════════════════════
+function renderSecao(id) {
+  const t = SES.tipoEquip;
+  switch(id) {
+    case 'ident': return renderIdentificacao(t);
+    case 'projeto': return renderProjeto(t);
+    case 'dimensoes': return renderDimensoes(t);
+    case 'disp': return renderDispositivos(t);
+    case 'docs': return renderDocumentacao(t);
+    case 'servico': return renderServico(t);
+    case 'enquadramento': return renderEnquadramento(t);
+    case 'obs': return renderObs(t);
+    default: return '';
+  }
+}
+
+function campo(id, label, type='text', opts={}) {
+  const ph = opts.placeholder || '';
+  const extra = opts.extra || '';
+  const hint = opts.hint ? `<small style="color:var(--text3);font-size:11px;display:block;margin-top:2px">${opts.hint}</small>` : '';
+  if (type === 'select') {
+    const options = (opts.options || []).map(o => {
+      const val = typeof o === 'string' ? o : o.v;
+      const lbl = typeof o === 'string' ? o : o.l;
+      return `<option value="${val}">${lbl}</option>`;
+    }).join('');
+    return `<div class="field"><label>${label}</label><select id="f_${id}" ${extra}><option value="">— Selecionar —</option>${options}</select>${hint}</div>`;
+  }
+  if (type === 'textarea') {
+    return `<div class="field"><label>${label}</label><textarea id="f_${id}" placeholder="${ph}" ${extra}></textarea>${hint}</div>`;
+  }
+  return `<div class="field"><label>${label}</label><input type="${type}" id="f_${id}" placeholder="${ph}" ${extra}>${hint}</div>`;
+}
+
+function toggle(id, label, opts=['Sim','Não','N/A']) {
+  const btns = opts.map((o,i) => {
+    const cls = i===0?'sel-ok':i===1?'sel-no':'sel-na';
+    return `<div class="toggle-opt" data-val="${o}" data-id="${id}" onclick="setToggle('${id}','${o}',this,'${cls}')">${o}</div>`;
+  }).join('');
+  return `<div class="field"><label>${label}</label><div class="toggle-row">${btns}</div></div>`;
+}
+
+const TOGGLES_REATIVOS = new Set(['status_documentacao','enquadra_nr13','possui_manometro','possui_valvula','valvula_adequada','modo_medicao_diametro','manometro_calibrado','valvula_calibrada']);
+function setToggle(id, val, el, cls) { markDirty(); debounceAutosave('toggle');
+  const row = el.closest('.toggle-row');
+  row.querySelectorAll('.toggle-opt').forEach(b => b.className = 'toggle-opt');
+  el.classList.add(cls);
+  SES.dados[id] = val;
+  if (TOGGLES_REATIVOS.has(id)) {
+    const secId = secAtualId();
+    salvarCampos(secId);
+    const body = document.getElementById('t5-body');
+    body.innerHTML = renderSecao(secId);
+    restaurarCampos(secId);
+  }
+}
+
+function checkList(id, label, items) {
+  const checks = items.map(item => {
+    const iid = id + '_' + item.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
+    return `<div class="check-item" id="ci_${iid}" onclick="toggleCheck('${iid}')">
+      <div class="check-box" id="cb_${iid}">✓</div>
+      <div class="check-label">${item}</div>
+    </div>`;
+  }).join('');
+  return `<div class="field"><label>${label}</label><div class="check-list">${checks}</div></div>`;
+}
+
+function toggleCheck(id) { markDirty(); debounceAutosave('check');
+  const ci = document.getElementById('ci_'+id);
+  const cb = document.getElementById('cb_'+id);
+  if (!ci || !cb) return;
+  const checked = ci.classList.toggle('checked');
+  if (!SES.dados._checks) SES.dados._checks = {};
+  SES.dados._checks[id] = checked;
+}
+
+// ── SEÇÃO A: IDENTIFICAÇÃO ──
+function renderIdentificacao(t) {
+  const tipoNR = {
+    vaso:    [{v:'I',l:'Categoria I'},{v:'II',l:'Categoria II'},{v:'III',l:'Categoria III'},{v:'IV',l:'Categoria IV'},{v:'V',l:'Categoria V (Isento)'}],
+    caldeira:[{v:'A',l:'Categoria A'},{v:'B',l:'Categoria B'},{v:'C',l:'Categoria C'}],
+    tubulacao:[{v:'I',l:'Classe I'},{v:'II',l:'Classe II'},{v:'III',l:'Classe III'}],
+    tanque:  [{v:'I',l:'Categoria I'},{v:'II',l:'Categoria II'},{v:'III',l:'Categoria III'}],
+  }[t] || [];
+
+  const codigoOpts = getCodigoProjetoSelect(t).map(v => ({v, l: v}));
+  const codigoProjeto = SES.dados.codigo_projeto || '';
+  const mostrarOutro = codigoProjeto === 'Outro' || (codigoProjeto && !getCodigoProjetoSelect(t).includes(codigoProjeto));
+
+  const html = `
+    ${campo('tag', 'TAG / Código de Identificação', 'text', {placeholder: 'VP-01, CL-01, TUB-01…'})}
+    ${campo('fabricante', 'Fabricante', 'text', {placeholder: 'Nome do fabricante'})}
+    ${campo('numero_equip', 'Número do Equipamento (Fabricante)', 'text', {placeholder: 'Nº dado pelo fabricante'})}
+    ${campo('ano_fabricacao', 'Ano de Fabricação', 'number', {placeholder: 'Ex: 2015'})}
+    <div class="field-row2">
+      ${campo('categoria', 'Categoria NR-13', 'select', {options: tipoNR})}
+      ${campo('codigo_projeto', 'Código de Projeto', 'select', {options: codigoOpts, extra: `onchange="onCodigoProjetoChange(this.value)"`})}
+    </div>
+    ${mostrarOutro ? campo('codigo_projeto_outro', 'Código de Projeto (especificar)', 'text', {placeholder: 'Ex: NR-12, EN 13445…'}) : ''}
+    ${campo('localizacao', 'Localização na Planta', 'text', {placeholder: 'Sala de compressores, área 3…'})}
+    ${toggle('placa_indelevel', 'Possui placa de identificação indelével?')}
+    ${toggle('necessita_tag', 'Necessita identificação de TAG/Categoria?')}
+    ${campo('obs_ident', 'Observações sobre identificação', 'textarea', {placeholder: 'Placa ilegível, tag ausente…'})}`;
+
+  const fotosSecao = getFotosSecao('ident', t);
+  return html + '<p class="sec-label">📷 Fotos desta Seção</p>' + fotosSecao.map(d => renderFotoBlock(d, 'ident')).join('');
+}
+
+function onCodigoProjetoChange(val) {
+  SES.dados.codigo_projeto = val;
+  if (val === 'Outro' || (val && !getCodigoProjetoSelect(SES.tipoEquip).includes(val))) {
+    const secId = secAtualId();
+    salvarCampos(secId);
+    const body = document.getElementById('t5-body');
+    body.innerHTML = renderSecao(secId);
+    restaurarCampos(secId);
+  }
+}
+
+// ── SEÇÃO B: PROJETO ──
+function renderProjeto(t) {
+  const fluidos = ['Vapor d\'água','Ar comprimido','Nitrogênio','GLP','GN (gás natural)','Amônia','CO2','Óleo hidráulico','Água','Outro'];
+  const classesFluido = [
+    {v:'A',l:'Classe A — Inflamável/Tóxico/Letal'},
+    {v:'B',l:'Classe B — Inflamável'},
+    {v:'C',l:'Classe C — Não inflamável / Não tóxico'},
+    {v:'D',l:'Classe D — Vapor d\'água / Água quente'},
+  ];
+  const html = `
+    <div class="field-row2">
+      ${campo('pmta', 'PMTA (kgf/cm²)', 'number', {placeholder: 'Pressão máx. trab. admissível'})}
+      ${campo('pressao_trabalho', 'Pressão de Trabalho (kgf/cm²)', 'number', {placeholder: 'Pressão operacional'})}
+    </div>
+    ${campo('pressao_teste', 'Pressão de Teste Hidrostático (kgf/cm²)', 'number', {placeholder: '1,5 × PMTA'})}
+    ${campo('fluido', 'Fluido de Trabalho', 'select', {options: fluidos})}
+    ${campo('fluido_outro', 'Especificar fluido (se Outro)', 'text', {placeholder: 'Descreva o fluido'})}
+    ${campo('classe_fluido', 'Classe do Fluido (NR-13)', 'select', {options: classesFluido})}
+    <div class="field-row2">
+      ${campo('ano_ultima_inspecao', 'Ano da Última Inspeção', 'number', {placeholder: 'Ex: 2022'})}
+      ${campo('tipo_ultima_inspecao', 'Tipo da Últ. Inspeção', 'select', {options: ['Interna','Externa','Interna + Externa','Não inspecionado']})}
+    </div>
+    ${toggle('ja_inspecionado', 'Já foi inspecionado anteriormente?')}`;
+  const fotosSecao = getFotosSecao('projeto', t);
+  return html + '<p class="sec-label">📷 Fotos desta Seção</p>' + fotosSecao.map(d => renderFotoBlock(d, 'projeto')).join('');
+}
+
+// ── SEÇÃO C: DIMENSÕES ──
+function renderDimensoes(t) {
+  let html = '';
+  if (t === 'vaso') {
+    const modoDiam = SES.dados.modo_medicao_diametro || '';
+    const circ = parseFloat(SES.dados.circunferencia_mm) || 0;
+    const calcDiam = circ > 0 ? (circ / Math.PI).toFixed(1) : '';
+    html = `
+      <div class="warn-box">Preencha as dimensões conforme placa, prontuário ou medição direta no campo.</div>
+      ${toggle('modo_medicao_diametro', 'Como foi obtido o diâmetro?', ['Diâmetro externo medido', 'Circunferência medida', 'Não medido'])}
+      ${modoDiam === 'Diâmetro externo medido' ? campo('diametro_externo_mm', 'Diâmetro Externo (mm)', 'number', {placeholder: 'Ex: 660'}) : ''}
+      ${modoDiam === 'Circunferência medida' ? `
+        ${campo('circunferencia_mm', 'Circunferência Medida (mm)', 'number', {placeholder: 'Ex: 2073', extra: `oninput="calcDiamFromCirc(this.value)"`})}
+        ${calcDiam ? `<div class="info-box" id="diam-calculado">📐 Diâmetro externo calculado: <strong>${calcDiam} mm</strong> (C/π)</div>` : '<div class="info-box" id="diam-calculado">📐 Digite a circunferência para calcular o diâmetro</div>'}
+        <input type="hidden" id="f_diametro_externo_calculado_mm" value="${calcDiam}">
+      ` : ''}
+      <div class="field-row2">
+        ${campo('comprimento', 'Comprimento / Altura (mm)', 'number', {placeholder: 'Ex: 2000'})}
+        ${campo('volume', 'Volume (litros)', 'number', {placeholder: 'Ex: 500'})}
+      </div>
+      ${campo('espessura_parede', 'Espessura de Parede (mm)', 'number', {placeholder: 'Ex: 10'})}
+      ${campo('material_casco', 'Material do Casco', 'text', {placeholder: 'Ex: Aço carbono ASTM A516 Gr.70'})}`;
+  }
+  if (t === 'caldeira') html = `
+    <div class="field-row2">
+      ${campo('capacidade_vapor', 'Capacidade de Produção (kg/h)', 'number', {placeholder: 'Ex: 500'})}
+      ${campo('area_aquecimento', 'Área de Superfície de Aquecimento (m²)', 'number', {placeholder: 'Ex: 40'})}
+    </div>
+    ${campo('combustivel', 'Combustível', 'select', {options: ['GLP','GN (gás natural)','Óleo BPF','Lenha/Biomassa','Elétrico','Outro']})}
+    ${campo('pressao_projeto', 'Pressão de Projeto (kgf/cm²)', 'number', {placeholder: 'Ex: 12'})}
+    ${campo('material_casco', 'Material do Casco', 'text', {placeholder: 'Ex: Aço carbono'})}`;
+  if (t === 'tubulacao') html = `
+    ${campo('bitola', 'Bitola Nominal', 'select', {options: ['1/2"','3/4"','1"','1.1/4"','1.1/2"','2"','2.1/2"','3"','4"','6"','8"','10"','12"','Outro']})}
+    ${campo('bitola_outro', 'Bitola (manual)', 'text', {placeholder: 'Se não listada acima'})}
+    <div class="field-row2">
+      ${campo('comprimento_m', 'Comprimento (m)', 'number', {placeholder: 'Ex: 45'})}
+      ${campo('espessura_parede', 'Espessura de Parede (mm)', 'number', {placeholder: 'Ex: 3,9'})}
+    </div>
+    ${campo('material', 'Material', 'select', {options: ['Aço carbono API 5L','Aço inox 304','Aço inox 316','Cobre','Latão','CPVC','Outro']})}
+    ${campo('classe_pressao', 'Classe de Pressão (ANSI/ASME)', 'select', {options: ['150#','300#','600#','900#','1500#','2500#','N/A']})}
+    ${campo('isolamento', 'Isolamento Térmico', 'select', {options: ['Sim — bom estado','Sim — deteriorado','Não possui','N/A']})}`;
+  if (t === 'tanque') html = `
+    <div class="field-row2">
+      ${campo('diametro', 'Diâmetro (m)', 'number', {placeholder: 'Ex: 4,5'})}
+      ${campo('altura', 'Altura (m)', 'number', {placeholder: 'Ex: 6'})}
+    </div>
+    ${campo('volume', 'Volume Nominal (m³)', 'number', {placeholder: 'Ex: 95'})}
+    ${campo('teto', 'Tipo de Teto', 'select', {options: ['Fixo cônico','Fixo abaulado','Flutuante externo','Flutuante interno','Aberto (sem teto)','Outro']})}
+    ${campo('material', 'Material', 'select', {options: ['Aço carbono','Aço inox 304','Aço inox 316','Fibra de vidro (GRP)','Outro']})}
+    ${campo('revestimento', 'Revestimento / Pintura', 'select', {options: ['Epóxi interno','Borracha (borrachamento)','Sem revestimento','Deteriorado','Outro']})}`;
+  if (!html) html = '<div class="info-box">Nenhuma dimensão específica para este tipo.</div>';
+  const fotosSecao = getFotosSecao('dimensoes', t);
+  return html + '<p class="sec-label">📷 Fotos desta Seção</p>' + fotosSecao.map(d => renderFotoBlock(d, 'dimensoes')).join('');
+}
+
+function calcDiamFromCirc(val) {
+  const circ = parseFloat(val) || 0;
+  const diam = circ > 0 ? (circ / Math.PI).toFixed(1) : '';
+  const box = document.getElementById('diam-calculado');
+  if (box) box.innerHTML = diam ? `📐 Diâmetro externo calculado: <strong>${diam} mm</strong> (C/π)` : '📐 Digite a circunferência para calcular o diâmetro';
+  const hid = document.getElementById('f_diametro_externo_calculado_mm');
+  if (hid) hid.value = diam;
+  SES.dados.diametro_externo_calculado_mm = diam;
+}
+
+// ── SEÇÃO D: DISPOSITIVOS DE SEGURANÇA ──
+function renderDispositivos(t) {
+  const temMan  = SES.dados.possui_manometro || '';
+  const temPSV  = SES.dados.possui_valvula   || '';
+  const psvAdq  = SES.dados.valvula_adequada  || '';
+
+  let html = `<p class="sec-label">Manômetro / Indicador de Pressão</p>
+    ${toggle('possui_manometro', 'Possui manômetro?', ['Sim','Não','N/A'])}`;
+
+  if (temMan === 'Sim') {
+    html += `
+      ${toggle('manometro_calibrado', 'Manômetro calibrado?', ['Sim','Não','N/A'])}
+      ${campo('cert_manometro', 'Nº Certificado de Calibração (Manômetro)', 'text', {placeholder: 'CAL-2026-001'})}
+      ${campo('venc_manometro', 'Vencimento da Calibração', 'date', {})}`;
+  } else if (temMan === 'Não' || temMan === 'N/A') {
+    html += campo('obs_manometro', 'Observação sobre manômetro', 'textarea', {placeholder: 'Justifique a ausência ou inaplicabilidade.'});
+  }
+
+  html += `<p class="sec-label">Válvula de Segurança / Alívio (PSV)</p>
+    ${toggle('possui_valvula', 'Possui válvula de segurança?', ['Sim','Não','N/A'])}`;
+
+  if (temPSV === 'Sim') {
+    html += `
+      ${campo('pa_valvula', 'Pressão de Abertura da PSV (kgf/cm²)', 'number', {placeholder: 'Ex: 11'})}
+      ${toggle('valvula_calibrada', 'PSV calibrada?', ['Sim','Não','N/A'])}
+      ${campo('cert_valvula', 'Nº Certificado de Calibração (PSV)', 'text', {placeholder: 'CAL-2026-002'})}
+      ${campo('venc_valvula', 'Vencimento da Calibração', 'date', {})}
+      ${toggle('valvula_adequada', 'A PSV é adequada ao equipamento?', ['Sim','Não','Não foi possível avaliar'])}`;
+
+    if (psvAdq === 'Não') {
+      html += campo('motivo_valvula_inadequada', 'Motivo da inadequação', 'textarea', {placeholder: 'Descreva por que a PSV não é adequada.'});
+    } else if (psvAdq === 'Não foi possível avaliar') {
+      html += campo('motivo_nao_avaliacao_valvula', 'Motivo da não avaliação', 'textarea', {placeholder: 'Ex: acesso bloqueado, placa ilegível…'});
+    }
+  } else if (temPSV === 'Não' || temPSV === 'N/A') {
+    html += campo('obs_valvula', 'Observação sobre válvula de segurança', 'textarea', {placeholder: 'Justifique a ausência ou inaplicabilidade.'});
+  }
+
+  html += `<p class="sec-label">Outros Dispositivos</p>
+    ${toggle('possui_purgador', 'Possui purgador?', ['Sim','Não','N/A'])}
+    ${toggle('possui_dcbi', 'Possui DCBI?', ['Sim','Não','N/A'])}
+    ${toggle('possui_valvula_retencao', 'Possui válvula de retenção?', ['Sim','Não','N/A'])}
+    ${t === 'caldeira' ? toggle('possui_indicador_nivel', 'Possui indicador de nível?', ['Sim','Não']) : ''}
+    ${t === 'caldeira' ? toggle('possui_pressostato', 'Possui pressostato de segurança?', ['Sim','Não']) : ''}`;
+
+  const fotosDisp = [];
+  if (temMan === 'Sim') { fotosDisp.push('foto_manometro', 'foto_cert_man'); }
+  if (temPSV === 'Sim') { fotosDisp.push('foto_psv', 'foto_cert_psv'); }
+  const fotosDefs = fotosDisp.length > 0
+    ? fotosDisp.map(k => ({ key: k, defaultLabel: LEGENDAS_TECNICAS[k] || k }))
+    : getFotosSecao('disp', t);
+
+  return html + '<p class="sec-label">📷 Fotos desta Seção</p>' + fotosDefs.map(d => renderFotoBlock(d, 'disp')).join('');
+}
+
+// ── SEÇÃO E: DOCUMENTAÇÃO ──
+function renderDocumentacaoInteligente(t) {
+  const docsTipo = {
+    vaso:      ['Prontuário do vaso (fabricante)','Registro de segurança','Relatórios de inspeção anteriores','Projeto de Alteração e Reparo (PAR)','Certificado de calibração PSV','Certificado de calibração manômetro','Projeto de instalação'],
+    caldeira:  ['Prontuário da caldeira (fabricante)','Registro de segurança','Relatórios de inspeção anteriores','Projeto de Alteração e Reparo (PAR)','Certificado de calibração PSV','Certificado de calibração manômetro','Projeto de instalação','Licença de operação'],
+    tubulacao: ['Folhas de dados / isométrico','Registro de segurança','Relatórios de inspeção anteriores','Projeto de Alteração e Reparo (PAR)','Certificado de testes'],
+    tanque:    ['Folhas de dados','Registro de segurança','Relatórios de inspeção anteriores','Projeto de Alteração e Reparo (PAR)','Certificados de inspeção e testes'],
+  };
+  const docs = docsTipo[t] || docsTipo.vaso;
+
+  const statusOpts = [
+    'Física completa',
+    'Física parcial',
+    'Digital completa',
+    'Digital parcial',
+    'Não localizada',
+    'Documentação extraviada',
+    'Aguardando envio pelo cliente',
+    'Não se aplica',
+    'Não verificada nesta visita'
+  ];
+  const status = SES.dados.status_documentacao || '';
+
+  const temDocs = ['Física completa','Física parcial','Digital completa','Digital parcial'].includes(status);
+  const digital = status.startsWith('Digital');
+  const semDocs = ['Não localizada','Documentação extraviada','Não se aplica','Não verificada nesta visita'].includes(status);
+  const aguardando = status === 'Aguardando envio pelo cliente';
+
+  let html = `
+    ${toggle('status_documentacao', 'Situação da documentação', statusOpts)}`;
+
+  if (temDocs) {
+    if (digital) {
+      html += `<div class="info-box">📱 Documentação digital: anexar ou registrar evidência do documento digital, se disponível.</div>`;
+    }
+    html += `
+      ${checkList('doc', 'Documentos presentes', docs)}
+      ${campo('obs_docs', 'Observações sobre documentação', 'textarea', {placeholder: 'Prontuário incompleto, RS desatualizado…'})}
+      ${campo('responsavel_envio_docs', 'Responsável pelo envio de documentos', 'text', {placeholder: 'Nome e contato'})}
+      ${campo('prazo_envio_docs', 'Prazo para envio', 'date', {})}
+      <p class="sec-label">📷 Fotos / Documentos desta Seção</p>
+      ${getFotosSecao('docs', t).map(d => renderFotoBlock(d, 'docs')).join('')}`;
+  } else if (aguardando) {
+    html += `
+      ${campo('responsavel_envio_docs', 'Responsável pelo envio', 'text', {placeholder: 'Nome e contato'})}
+      ${campo('prazo_envio_docs', 'Prazo para envio', 'date', {})}
+      ${campo('canal_envio_docs', 'Canal previsto', 'select', {options: ['E-mail','WhatsApp','Portal do cliente','Outro']})}
+      ${campo('obs_docs', 'Observações', 'textarea', {placeholder: 'Detalhes sobre o envio pendente.'})}`;
+  } else if (semDocs) {
+    html += `
+      <div class="warn-box">📁 Documentação não disponível no momento da coleta. Fotos documentais desativadas para esta seção.</div>
+      ${campo('obs_docs', 'Observações', 'textarea', {placeholder: 'Descreva o status e a pendência documental.'})}`;
+  } else {
+    html += campo('obs_docs', 'Observações sobre documentação', 'textarea', {placeholder: 'Descreva o status atual da documentação.'});
+  }
+
+  return html;
+}
+const renderDocumentacao = renderDocumentacaoInteligente;
+
+// ── SEÇÃO F: CONDIÇÕES DE SERVIÇO ──
+function renderServico(t) {
+  const ends = ['Líquido Penetrante (LP)','Ultrassom (UT)','Partículas Magnéticas (PM)','Radiografia (RT)','TOFD','Phased Array (PA)','Hardness Test'];
+  const html = `
+    ${toggle('trabalho_altura','Requer trabalho em altura para inspeção?',['Sim','Não'])}
+    ${toggle('necessita_th','Necessita Teste Hidrostático?',['Sim','Não','Já realizado'])}
+    ${toggle('espaco_confinado','Acesso por espaço confinado?',['Sim','Não'])}
+    ${toggle('necessita_scaffold','Necessita andaime para acesso?',['Sim','Não'])}
+    ${checkList('end','Ensaios Não Destrutivos necessários',ends)}
+    ${campo('processo','Informações do Processo (para inspeção)','textarea',{placeholder:'Temperatura, pressão de operação atual, ciclos de operação, histórico de falhas…'})}
+    ${campo('risco_observado','Riscos Observados','textarea',{placeholder:'Corrosão externa, vazamentos, deformações…'})}`;
+  const fotosSecao = getFotosSecao('servico', t);
+  return html + '<p class="sec-label">📷 Fotos desta Seção</p>' + fotosSecao.map(d => renderFotoBlock(d, 'servico')).join('');
+}
+
+function renderEnquadramento(t) {
+  const enquadra = SES.dados.enquadra_nr13 || '';
+
+  const motivosEnq = [
+    'PMTA > 0,8 kgf/cm²',
+    'Produto perigoso/classe A/B',
+    'Volume acima do limite normativo',
+    'Fluido sob pressão em regime contínuo',
+    'Equipamento listado no inventário NR13',
+    'Processo crítico com risco potencial'
+  ];
+
+  const motivosNaoEnq = [
+    'Recipiente transportável, vaso destinado ao transporte, reservatório portátil ou extintor de incêndio',
+    'Vaso de pressão destinado à ocupação humana',
+    'Vaso integrante de sistema auxiliar de pacote de máquinas',
+    'Duto ou componente de duto',
+    'Forno, serpentina de troca térmica ou aquecedor de fluido térmico',
+    'Vaso com diâmetro interno inferior a 150 mm',
+    'Gerador de vapor não enquadrado em código de vaso ou caldeira',
+    'Tubo de sistema de instrumentação',
+    'Tubulação de rede pública de distribuição de gás',
+    'Vaso de pressão em PRFV',
+    'Caldeira com volume inferior a 100 litros',
+    'Tanque estrutural de embarcação, navio ou plataforma marítima',
+    'Vaso ou acumulador de equipamento submarino',
+    'Tanque enterrado ou apoiado sobre pernas, sapatas, pedestais ou selas',
+    'Panela de cocção',
+    'Acumulador ou bloco hidráulico',
+    'Tubulação que opera com vapor, observado item 13.6.2.6',
+    'Trocador de calor de placas corrugadas gaxetadas ou brasadas',
+    'Vaso sujeito exclusivamente a vácuo menor ou igual a 5 kPa, sem fluido classe A',
+    'Outro motivo — avaliar com PLH'
+  ];
+
+  const acoesNaoEnq = [
+    'Oferecer formalização de desenquadramento',
+    'Cliente decidiu não tomar nenhuma ação',
+    'Aguardar avaliação do PLH',
+    'Incluir como observação no relatório',
+    'Outro'
+  ];
+
+  let html = `
+    <div class="info-box">Esta é a primeira seção. O enquadramento NR13 determina quais campos serão preenchidos.</div>
+    ${toggle('enquadra_nr13', 'O equipamento se enquadra na NR13?', [
+      'Sim, enquadra conforme 13.2.1',
+      'Não enquadra conforme 13.2.2',
+      'Dúvida / necessita avaliação PLH',
+      'Fora do escopo da coleta atual'
+    ])}`;
+
+  if (enquadra === 'Sim, enquadra conforme 13.2.1') {
+    html += `
+      ${checkList('enq_motivo', 'Motivos de enquadramento (NR13)', motivosEnq)}
+      ${campo('situacao_nr13', 'Situação NR13', 'select', {options: ['Em dia','Vencida','Nunca inspecionada','Sem documentação','Fora do escopo NR13','A classificar']})}
+      ${campo('base_enquadramento', 'Base de enquadramento', 'textarea', {placeholder: 'Fundamente com base normativa e evidências de campo.'})}
+      ${campo('observacao_enquadramento', 'Observações de enquadramento', 'textarea', {placeholder: 'Complementos, restrições e recomendações.'})}`;
+  } else if (enquadra === 'Não enquadra conforme 13.2.2') {
+    SES.dados._nao_enquadrado = true;
+    html += `
+      <div class="warn-box">⚠️ Não enquadrado conforme NR13 13.2.2. Preencha o motivo e registre fotos de evidência.</div>
+      ${campo('motivo_nao_enquadramento', 'Motivo de não enquadramento (NR13 13.2.2)', 'select', {options: motivosNaoEnq})}
+      ${campo('descricao_nao_enquadramento', 'Descrição / Detalhamento', 'textarea', {placeholder: 'Descreva em detalhes com base nas características do equipamento.'})}
+      ${campo('acao_nao_enquadramento', 'Ação recomendada', 'select', {options: acoesNaoEnq})}
+      <p class="sec-label">📷 Fotos de evidência de não enquadramento</p>
+      ${renderFotoBlock({key:'foto_evidencia_naoEnq1', defaultLabel:'Foto de Evidência 1 (Não enquadramento NR13)'},'enquadramento')}
+      ${renderFotoBlock({key:'foto_evidencia_naoEnq2', defaultLabel:'Foto de Evidência 2 (Não enquadramento NR13)'},'enquadramento')}`;
+  } else if (enquadra === 'Dúvida / necessita avaliação PLH' || enquadra === 'Fora do escopo da coleta atual') {
+    html += `
+      ${campo('base_enquadramento', 'Justificativa / Observação', 'textarea', {placeholder: 'Descreva as razões da dúvida ou do escopo não aplicável.'})}
+      ${campo('situacao_nr13', 'Situação NR13', 'select', {options: ['Em dia','Vencida','Nunca inspecionada','Sem documentação','Fora do escopo NR13','A classificar']})}`;
+  } else {
+    html += `
+      ${campo('base_enquadramento', 'Observações iniciais', 'textarea', {placeholder: 'Informações gerais sobre o equipamento e contexto da coleta.'})}`;
+  }
+
+  return html;
+}
+
+function getFotosSecao(secaoId, tipo) {
+  const mapa = {
+    ident:    ['foto_placa','foto_tag','foto_geral_equip'],
+    projeto:  ['foto_folha_dados','foto_trecho_pmta'],
+    dimensoes:['foto_medicao','foto_corpo','foto_conexoes'],
+    disp:     ['foto_psv','foto_manometro','foto_cert_psv','foto_cert_man'],
+    docs:     ['foto_prontuario','foto_registro_seg','foto_rel_anterior','foto_cert_psv_doc'],
+    servico:  ['foto_ambiente','foto_acesso','foto_risco'],
+  };
+  if (secaoId === 'obs') return getFotosDefs(tipo);
+  return (mapa[secaoId] || []).map(k => ({
+    key: k,
+    defaultLabel: LEGENDAS_TECNICAS[k] || k.replace('foto_', 'Foto ').replace(/_/g, ' ')
+  }));
+}
+
+// ── SEÇÃO G: OBSERVAÇÕES E FOTO ──
+// Retorna as definições de fotos para cada tipo de equipamento
+function getFotosDefs(t) {
+  // Fotos comuns a todos os tipos
+  const comuns = [
+    { key:'foto_local',   defaultLabel:'Foto do Local / Equipamento' },
+    { key:'foto_placa',   defaultLabel:'Foto da Placa de Identificação' },
+    { key:'foto_psv',     defaultLabel:'Foto da Válvula de Segurança ou Válvula de Alívio' },
+    { key:'foto_manometro', defaultLabel:'Foto do Manômetro ou Instrumento de Pressão' },
+    { key:'foto_docs',    defaultLabel:'Fotos dos Documentos Existentes' },
+    { key:'foto_ambiente',defaultLabel:'Foto Geral do Ambiente de Instalação' },
+  ];
+  // Fotos específicas por tipo
+  const extras = {
+    caldeira: [
+      { key:'foto_abastec_emerg', defaultLabel:'Foto do Sistema de Abastecimento de Emergência' },
+      { key:'foto_indicador_nivel', defaultLabel:'Foto do Indicador de Nível' },
+      { key:'foto_seg_adicionais', defaultLabel:'Foto de Sistemas de Segurança Adicionais' },
+      { key:'foto_descarga_fundo', defaultLabel:'Foto da Descarga de Fundo' },
+      { key:'foto_ambiente_cal',   defaultLabel:'Foto do Ambiente onde está Instalada' },
+      { key:'foto_combate_inc',    defaultLabel:'Foto dos Sistemas de Combate a Incêndio Instalados' },
+    ],
+    tanque: [
+      { key:'foto_quebra_vacuo',   defaultLabel:'Foto da Válvula Quebra-Vácuo' },
+    ],
+    tubulacao: [
+      { key:'foto_geral_tub',      defaultLabel:'Foto Geral da Tubulação' },
+      { key:'foto_ponto_alto',     defaultLabel:'Foto do Ponto Mais Alto da Tubulação' },
+    ],
+  };
+  return [...comuns, ...(extras[t] || [])];
+}
+
+function renderFotoBlock(def, secaoId) {
+  const key = def.key;
+  const labelKey = key + '_label';
+  const currentLabel = SES.fotos[labelKey] || def.defaultLabel;
+  const foto = SES.fotos[key];
+  return `
+    <div style="margin-bottom:16px;background:var(--surf);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+      <div style="padding:10px 14px 6px">
+        <label style="display:block;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Legenda da Foto</label>
+        <input type="text" id="lbl_${key}" value="${currentLabel.replace(/"/g,'&quot;')}"
+          style="width:100%;background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--text);font-family:var(--body)"
+          oninput="SES.fotos['${labelKey}']=this.value;markDirty()"
+          onfocus="this.style.borderColor='var(--accent)'"
+          onblur="this.style.borderColor='var(--border)'">
+      </div>
+      <div style="padding:0 14px 12px">
+        ${foto && foto.dataUrl
+          ? `<img src="${foto.dataUrl}" class="photo-thumb" style="margin-bottom:6px"><span class="photo-clear" onclick="clearFoto('${key}')">✕ Remover foto</span>`
+          : `<div style="display:flex;gap:8px"><button type="button" class="btn btn-ghost btn-sm" onclick="preparePhoto('${key}','${secaoId}','${key}','camera')">📷 Câmera</button><button type="button" class="btn btn-ghost btn-sm" onclick="preparePhoto('${key}','${secaoId}','${key}','galeria')">🖼️ Galeria</button></div>`
+        }
+      </div>
+    </div>`;
+}
+
+function renderObs(t) {
+  // Pergunta extra para tubulação
+  const tubExtra = t === 'tubulacao' ? `
+    <p class="sec-label" style="margin-top:4px">Documentação de Tubulação</p>
+    ${toggle('possui_desenho_tub','Existe desenho / isométrico da tubulação?',['Sim','Não','Parcial'])}
+    ${campo('obs_desenho_tub','Observações sobre o desenho','textarea',{placeholder:'Localização do desenho, revisão atual, pendências…'})}` : '';
+
+  const defs = getFotosDefs(t);
+  const fotosHtml = defs.map(d => renderFotoBlock(d, 'obs')).join('');
+
+  return `
+    ${campo('obs_gerais','Observações Gerais','textarea',{placeholder:'Condição geral, anomalias, recomendações…'})}
+    ${campo('obs_inspetor','Recomendações do Inspetor','textarea',{placeholder:'Ações imediatas, próxima inspeção…'})}
+    ${tubExtra}
+    <p class="sec-label" style="margin-top:8px">Registro Fotográfico</p>
+    <div class="info-box" style="margin-bottom:12px">As legendas são editáveis. Toque no campo de texto acima de cada foto para personalizar.</div>
+    ${fotosHtml}`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FOTO
+// ═══════════════════════════════════════════════════════════════
+let _photoTarget = null;
+function preparePhoto(key, secao, campo_ref, origem) {
+  _photoTarget = { key, secao, campo_ref, origem };
+  const fi = document.getElementById(origem === 'camera' ? 'fileInputCamera' : 'fileInputGallery');
+  fi.value = '';
+  fi.onchange = handlePhotoSelected;
+  fi.click(); // DEVE estar no mesmo callstack do clique do usuário (onclick direto)
+}
+function handlePhotoSelected(event) { markDirty();
+  const fi = event.target;
+  const file = fi.files && fi.files[0];
+  if (!file || !_photoTarget) return;
+  const target = { ..._photoTarget }; // cópia local — evita race condition
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const MAX = FOTO_MAX_SIZE;
+      let w = img.width, h = img.height;
+      const mx = Math.max(w, h);
+      if (mx > MAX) { const r = MAX / mx; w = Math.round(w * r); h = Math.round(h * r); }
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      const dataUrl = c.toDataURL('image/jpeg', FOTO_JPEG_QUALITY);
+      const key = target.key;
+      const equipId = ensureEquipId();
+      const legendaDefault = LEGENDAS_TECNICAS[key] || key.replace(/foto_/, '').replace(/_/g, ' ');
+      // Gerar thumbUrl (máx 80px, JPEG 0.5) — persiste no localStorage via _stripDataUrls
+      let thumbUrl = null;
+      try {
+        const THUMB_MAX = 80;
+        let tw = w, th = h;
+        const tmx = Math.max(tw, th);
+        if (tmx > THUMB_MAX) { const tr = THUMB_MAX / tmx; tw = Math.round(tw * tr); th = Math.round(th * tr); }
+        const tc = document.createElement('canvas');
+        tc.width = tw; tc.height = th;
+        tc.getContext('2d').drawImage(img, 0, 0, tw, th);
+        thumbUrl = tc.toDataURL('image/jpeg', 0.5);
+      } catch(e) { thumbUrl = null; }
+      SES.fotos[key] = {
+        key,
+        label: SES.fotos[key + '_label'] || legendaDefault,
+        secao: target.secao,
+        campo_ref: target.campo_ref,
+        dataUrl, w, h,
+        thumbUrl,           // ← ADICIONADO
+        origem: target.origem,
+        created_at: new Date().toISOString(),
+        id_equipamento_colect: equipId
+      };
+      markDirty();
+      const secId = secAtualId();
+      const body = document.getElementById('t5-body');
+      body.innerHTML = renderSecao(secId);
+      restaurarCampos(secId);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function clearFoto(campo) {
+  markDirty();
+  delete SES.fotos[campo];
+  const body = document.getElementById('t5-body');
+  body.innerHTML = renderSecao(secAtualId());
+  restaurarCampos(secAtualId());
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SALVAR / RESTAURAR CAMPOS
+// ═══════════════════════════════════════════════════════════════
+function salvarCampos(secId) {
+  document.querySelectorAll('#t5-body [id^="f_"]').forEach(el => {
+    const key = el.id.replace('f_','');
+    SES.dados[key] = el.value;
+  });
+  // Salvar legendas de fotos (inputs com id lbl_*)
+  document.querySelectorAll('#t5-body [id^="lbl_"]').forEach(el => {
+    const key = el.id.replace('lbl_','') + '_label';
+    SES.fotos[key] = el.value;
+  });
+  // Toggles já salvos em setToggle
+  // Checks já salvos em toggleCheck
+  SES.dados.possui_foto = Object.keys(SES.fotos).filter(k=>!k.endsWith('_label')).length > 0;
+}
+
+function restaurarCampos(secId) {
+  document.querySelectorAll('#t5-body [id^="f_"]').forEach(el => {
+    const key = el.id.replace('f_','');
+    if (SES.dados[key] !== undefined) el.value = SES.dados[key];
+  });
+  // Restaurar toggles
+  document.querySelectorAll('#t5-body .toggle-row').forEach(row => {
+    const opts = row.querySelectorAll('.toggle-opt');
+    opts.forEach(opt => {
+      const id = opt.dataset.id;
+      const val = opt.dataset.val;
+      if (id && SES.dados[id] === val) {
+        const cls = opt.getAttribute('onclick').match(/sel-\w+/)?.[0] || 'sel-ok';
+        opt.classList.add(cls);
+      }
+    });
+  });
+  // Restaurar checks
+  if (SES.dados._checks) {
+    Object.entries(SES.dados._checks).forEach(([id, checked]) => {
+      const ci = document.getElementById('ci_'+id);
+      const cb = document.getElementById('cb_'+id);
+      if (ci && cb) {
+        if (checked) ci.classList.add('checked');
+        else ci.classList.remove('checked');
+      }
+    });
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// T6 — REVISÃO
+// ═══════════════════════════════════════════════════════════════
+function renderT6() {
+  _pararWatcherScroll();
+  salvarCampos(secAtualId());
+  const d = SES.dados;
+  document.getElementById('t6-tag').textContent = d.tag || 'Sem TAG';
+  document.getElementById('t6-tipo').textContent = labelTipo(d.tipo);
+
+  const rv = (label, val) => val
+    ? `<div class="rev-row"><span class="rev-label">${esc(label)}</span><span class="rev-value">${esc(String(val))}</span></div>`
+    : '';
+
+  let fotos_html = '';
+  Object.keys(SES.fotos).forEach(f => {
+    if (f.endsWith('_label') || !SES.fotos[f] || !SES.fotos[f].dataUrl) return;
+    fotos_html += `<img src="${SES.fotos[f].dataUrl}" style="width:48%;border-radius:8px;margin:2px">`;
+  });
+
+  if (isNaoEnquadrado()) {
+    // Revisão curta para não enquadrado
+    document.getElementById('t6-body').innerHTML = `
+      <div style="background:rgba(245,158,11,.1);border:1px solid var(--warn);border-radius:10px;padding:12px;margin-bottom:12px">
+        <strong style="color:var(--warn)">⚠️ Registro de Não Enquadramento NR13</strong>
+        <p style="font-size:12px;color:var(--text2);margin-top:4px">Este equipamento não foi submetido a inspeção NR13 completa. Apenas os dados de não enquadramento serão registrados.</p>
+      </div>
+      <div class="rev-card">
+        <div class="rev-head"><span class="rev-head-tag">${esc(d.tag || '—')}</span><span class="rev-head-tipo">${esc(labelTipo(d.tipo))}</span></div>
+        ${rv('Enquadramento NR13', d.enquadra_nr13)}
+        ${rv('Motivo de não enquadramento', d.motivo_nao_enquadramento)}
+        ${rv('Descrição / Detalhamento', d.descricao_nao_enquadramento)}
+        ${rv('Ação recomendada', d.acao_nao_enquadramento)}
+        ${rv('OS', SES.os ? SES.os.numero_os : '')}
+        ${rv('Cliente', SES.os ? SES.os.cliente : '')}
+        ${rv('Inspetor', SES.inspetor ? SES.inspetor.nome : '')}
+        ${rv('Observações', d.obs_gerais)}
+      </div>
+      ${fotos_html ? '<p class="sec-label">Fotos de Evidência</p><div style="display:flex;flex-wrap:wrap;gap:4px">' + fotos_html + '</div>' : ''}`;
+  } else {
+    // Revisão completa NR13
+    const checkedDocs = Object.entries(d._checks || {}).filter(([,v])=>v).map(([k])=>k.replace(/doc_/,'').replace(/_/g,' ')).join(', ');
+    document.getElementById('t6-body').innerHTML = `
+      <div class="rev-card">
+        <div class="rev-head"><span class="rev-head-tag">${esc(d.tag || '—')}</span><span class="rev-head-tipo">${esc(labelTipo(d.tipo))}</span></div>
+        ${rv('Fabricante', d.fabricante)}
+        ${rv('Nº Equipamento', d.numero_equip)}
+        ${rv('Ano Fabricação', d.ano_fabricacao)}
+        ${rv('Categoria', d.categoria)}
+        ${rv('Código de Projeto', d.codigo_projeto)}
+        ${rv('Localização', d.localizacao)}
+        ${rv('Placa Indelével', d.placa_indelevel)}
+        ${rv('PMTA (kgf/cm²)', d.pmta)}
+        ${rv('Pressão Trabalho', d.pressao_trabalho)}
+        ${rv('Fluido', d.fluido || d.fluido_outro)}
+        ${rv('Classe Fluido', d.classe_fluido)}
+        ${rv('Pressão Teste Hidrostático', d.pressao_teste)}
+        ${d.volume ? rv('Volume', d.volume + (SES.tipoEquip==='tanque'?' m³':' litros')) : ''}
+        ${rv('Manômetro', d.possui_manometro)}
+        ${rv('Manômetro calibrado', d.manometro_calibrado)}
+        ${rv('PSV', d.possui_valvula)}
+        ${rv('PSV calibrada', d.valvula_calibrada)}
+        ${rv('Purgador', d.possui_purgador)}
+        ${rv('DCBI', d.possui_dcbi)}
+        ${rv('Documentos presentes', checkedDocs || '—')}
+        ${rv('Trabalho em altura', d.trabalho_altura)}
+        ${rv('Necessita TH', d.necessita_th)}
+        ${rv('Observações', d.obs_gerais)}
+      </div>
+      ${fotos_html ? '<p class="sec-label">Fotos</p><div style="display:flex;flex-wrap:wrap;gap:4px">' + fotos_html + '</div>' : ''}`;
+  }
+  goTo('t6');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SALVAR EQUIPAMENTO
+// ═══════════════════════════════════════════════════════════════
+// Remove dataUrl das fotos antes de salvar no localStorage para evitar QuotaExceededError.
+// Os dataUrls continuam em memória (SES.fotos / eq._fotos) durante a sessão.
+function _stripDataUrls(fotosObj) {
+  if (!fotosObj || typeof fotosObj !== 'object') return {};
+  const stripped = {};
+  Object.entries(fotosObj).forEach(([k, v]) => {
+    if (k.endsWith('_label')) { stripped[k] = v; return; }
+    if (v && typeof v === 'object') {
+      const { dataUrl, thumbUrl, ...meta } = v;
+      stripped[k] = { ...meta, thumbUrl: thumbUrl || null, _hasData: !!dataUrl };
+    } else {
+      stripped[k] = v;
+    }
+  });
+  return stripped;
+}
+
+function saveOSDraft(reason) {
+  if (!SES.os || !SES.os.id_os) return;
+  const chave = 'colect_os_' + SES.os.id_os;
+  const now = new Date().toISOString();
+  ensureVisitId();
+
+  const equipSerializados = SES.equipamentos.map(eq => {
+    const { _fotos, _salvo, _ts, _nao_enquadrado, _pendencias, status_completude, sync_status,
+            synced_at, drive_folder_url, drive_folder_id, quantidade_fotos, fotos_json,
+            primeira_foto_url, created_at, updated_at, id_equipamento_colect, tipo, ...dadosPuros } = eq;
+    return {
+      id_equipamento_colect: id_equipamento_colect || newEquipId(),
+      tipo: tipo || dadosPuros.tipo || '',
+      dados: dadosPuros,
+      fotos: _stripDataUrls(_fotos || {}),   // ← sem dataUrl no localStorage
+      pendencias: _pendencias || [],
+      status_completude: status_completude || (_nao_enquadrado ? 'nao_enquadrado' : _salvo ? 'salvo' : 'rascunho'),
+      sync_status: sync_status || 'local',
+      synced_at: synced_at || null,
+      drive_folder_url: drive_folder_url || null,
+      drive_folder_id: drive_folder_id || null,
+      created_at: created_at || now,
+      updated_at: now,
+    };
+  });
+
+  // v2.10: só persiste rascunho em edição quando o usuário está ativamente preenchendo
+  // formulário (t4/t4b/t5/t6). Em t3, t-export e demais, currentEquipId deve estar null
+  // (garantido pelo reset no goTo), mas esta guarda adicional protege contra edge cases.
+  const _telaFormulario = ['t4','t4b','t5','t6'].includes(currentScreen);
+  const temEquipEmEdicao = _telaFormulario && SES.currentEquipId && SES.equipEdit === null && SES.dados && Object.keys(SES.dados).length > 1;
+
+  if (temEquipEmEdicao) {
+    const jaIncluso = equipSerializados.some(e => e.id_equipamento_colect === SES.currentEquipId);
+    if (!jaIncluso) {
+      const { _fotos, _salvo, _ts, _nao_enquadrado, _pendencias, status_completude, sync_status, id_equipamento_colect, tipo, ...dadosPuros } = SES.dados;
+      equipSerializados.push({
+        id_equipamento_colect: SES.currentEquipId,
+        tipo: SES.tipoEquip || tipo || dadosPuros.tipo || '',
+        dados: dadosPuros,
+        fotos: _stripDataUrls(SES.fotos || {}),  // ← sem dataUrl no localStorage
+        pendencias: SES.pendencias || [],
+        status_completude: 'rascunho',
+        sync_status: 'local',
+        synced_at: null,
+        drive_folder_url: null,
+        drive_folder_id: null,
+        created_at: now,
+        updated_at: now,
+      });
+    }
+  }
+
+  if (SES.equipEdit !== null && equipSerializados[SES.equipEdit]) {
+    const eq = SES.equipamentos[SES.equipEdit];
+    const { _fotos, _salvo, _ts, _nao_enquadrado, _pendencias, status_completude, sync_status,
+            synced_at, drive_folder_url, drive_folder_id, id_equipamento_colect, tipo, ...dadosPuros } = { ...eq, ...SES.dados };
+    equipSerializados[SES.equipEdit] = {
+      ...equipSerializados[SES.equipEdit],
+      dados: { ...equipSerializados[SES.equipEdit].dados, ...dadosPuros },
+      fotos: _stripDataUrls({ ...equipSerializados[SES.equipEdit].fotos, ...SES.fotos }),  // ← sem dataUrl
+      pendencias: SES.pendencias || equipSerializados[SES.equipEdit].pendencias,
+      updated_at: now,
+    };
+  }
+
+  const payload = {
+    id_visita_colect: SES.id_visita_colect,
+    os: SES.os,
+    inspetor: SES.inspetor,
+    equipamentos: equipSerializados,
+    updated_at: now,
+    sync_status: 'local',
+    app_version: APP_VERSION,
+    modoColetaInicial: SES.modoColetaInicial || '',
+    reason: reason || 'save',
+  };
+
+  try {
+    localStorage.setItem(chave, JSON.stringify(payload));
+  } catch(e) {
+    showToast('⚠️ Falha ao salvar rascunho: ' + e.message, 'warn');
+    console.error('saveOSDraft:', e);
+  }
+}
+
+function salvarEquipamento() {
+  const naoEnq = isNaoEnquadrado();
+  const equipId = ensureEquipId();
+  const equipAnterior = SES.equipEdit !== null ? SES.equipamentos[SES.equipEdit] : {};
+  const equip = {
+    ...SES.dados,
+    id_equipamento_colect: equipId,
+    _fotos: SES.fotos,
+    _salvo: true,
+    _nao_enquadrado: naoEnq,
+    _pendencias: SES.pendencias || [],
+    status_completude: naoEnq ? 'nao_enquadrado' : 'salvo',
+    sync_status: 'local',
+    drive_folder_url: equipAnterior.drive_folder_url || null,
+    drive_folder_id: equipAnterior.drive_folder_id || null,
+    created_at: equipAnterior.created_at || new Date().toISOString(),
+    _ts: Date.now()
+  };
+  equip.modo_coleta_inicial = SES.dados.modo_coleta_inicial || SES.modoColetaInicial || 'campo';
+  equip.status_coleta_campo = SES.dados.status_coleta_campo || 'nao_iniciada';
+  equip.status_coleta_documentos = SES.dados.status_coleta_documentos || 'nao_iniciada';
+  equip.pendencias_campo = SES.dados.pendencias_campo || '';
+  equip.pendencias_documentais = SES.dados.pendencias_documentais || '';
+  if (SES.equipEdit !== null) SES.equipamentos[SES.equipEdit] = equip;
+  else SES.equipamentos.push(equip);
+  SES.equipEdit = null;
+  saveOSDraft('post-send');
+  showToast('✓ Equipamento salvo localmente');
+  renderT3();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// T-EXPORT
+// ═══════════════════════════════════════════════════════════════
+function renderExport() {
+  document.getElementById('exp-os-label').textContent = SES.os ? esc(SES.os.numero_os + ' · ' + SES.os.cliente) : '—';
+  const total = SES.equipamentos.length;
+  const feitos = SES.equipamentos.filter(e => e._salvo).length;
+  document.getElementById('exp-summary').textContent = `${feitos} equipamento(s) preenchido(s) de ${total} nesta OS.`;
+
+  // ── Lista PDF individual (inalterada) ──
+  const list = document.getElementById('exp-equip-list');
+  if (!total) {
+    list.innerHTML = '<div class="empty-state"><div class="ei">📋</div><p>Nenhum equipamento salvo nesta OS.<br>Salve ao menos um equipamento para exportar.</p></div>';
+  } else {
+    list.innerHTML = SES.equipamentos.map((eq, idx) => {
+      const tag = eq.tag || eq.numero_equip || ('EQ-' + (idx+1));
+      const naoEnq = eq._nao_enquadrado || eq.status_completude === 'nao_enquadrado';
+      return `<div class="equip-card" onclick="gerarPDFUnico(${idx})">
+        <div class="ec-tag">${esc(tag)}</div>
+        <div class="ec-tipo">${esc(labelTipo(eq.tipo))}${eq.fabricante?' · '+esc(eq.fabricante):''}</div>
+        <div class="ec-status">
+          <span class="pill pill-blue">📄 Gerar PDF ${naoEnq ? '(Não enquadrado)' : 'Individual'}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Lista de envio para relatório ──
+  renderEnvioList();
+}
+
+function renderEnvioList() {
+  const container = document.getElementById('exp-envio-list');
+  if (!container) return;
+  const elegíveis = SES.equipamentos.filter(e => e._salvo || e._nao_enquadrado || e.status_completude === 'nao_enquadrado');
+  if (!elegíveis.length) {
+    container.innerHTML = '<p style="font-size:13px;color:var(--text2);text-align:center;padding:8px 0">Nenhum equipamento finalizado para envio.</p>';
+    return;
+  }
+
+  container.innerHTML = elegíveis.map((eq, relIdx) => {
+    const idx = SES.equipamentos.indexOf(eq);
+    const tag = esc(eq.tag || eq.numero_equip || ('EQ-' + (idx+1)));
+    const liberado = eq.sync_status === 'liberado_relatorio';
+    const synced   = eq.sync_status === 'synced';
+    const statusLabel = liberado ? '<span class="pill pill-liberado">✅ Liberado</span>'
+                       : synced  ? '<span class="pill pill-synced">☁ Synced</span>'
+                       :           '<span class="pill" style="background:var(--surf2)">📱 Local</span>';
+
+    // Fotos disponíveis: prioriza _fotos em memória, fallback para fotos_json
+    const fotosArr = _fotosDisponiveis(eq);
+    const temFotos = fotosArr.length > 0;
+
+    const fotosHtml = temFotos ? fotosArr.map(f => {
+      const radioId = `radio_capa_${idx}_${esc(f.key)}`;
+      const isSelected = eq.foto_capa_key === f.key;
+      const thumbHtml = f.dataUrl
+        ? `<img class="foto-thumb-mini" src="${f.dataUrl}" alt="">`
+        : `<span style="font-size:18px">🖼️</span>`;
+      return `<div class="foto-radio-row">
+        <input type="radio" id="${radioId}" name="radio_capa_${idx}" value="${esc(f.key)}" ${isSelected ? 'checked' : ''}
+          onchange="selecionarFotoCapa(${idx}, '${esc(f.key)}')">
+        ${thumbHtml}
+        <label for="${radioId}" class="foto-radio-label">${esc(f.label || f.key)}</label>
+      </div>`;
+    }).join('') : '<p style="font-size:12px;color:var(--text2);padding:4px 0">Nenhuma foto capturada.</p>';
+
+    const fotosBtnLabel = temFotos ? `📷 Foto da capa (${fotosArr.length})` : '📷 Sem fotos';
+    const checked = liberado ? 'checked' : '';
+
+    return `<div class="envio-card" id="envio-card-${idx}">
+      <div class="envio-card-hdr">
+        <input type="checkbox" id="chk_envio_${idx}" ${checked} ${!liberado && !eq._salvo && !eq._nao_enquadrado ? 'disabled' : ''}>
+        <div class="envio-card-info">
+          <div class="envio-card-tag">${tag}</div>
+          <div class="envio-card-status">${esc(labelTipo(eq.tipo))} · ${statusLabel}</div>
+        </div>
+        <button class="btn btn-ghost" style="font-size:11px;padding:4px 8px" onclick="toggleFotosEnvio(${idx})">${fotosBtnLabel}</button>
+      </div>
+      <div class="envio-card-fotos" id="fotos-envio-${idx}">
+        <p style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px">Selecione a foto da capa:</p>
+        ${fotosHtml}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function _fotosDisponiveis(eq) {
+  // Retorna array { key, label, dataUrl? } das fotos disponíveis para seleção de capa
+  const out = [];
+  const src = eq._fotos || {};
+  Object.entries(src).forEach(([k, v]) => {
+    if (k.endsWith('_label') || !v) return;
+    if (v.dataUrl || v._hasData || v.thumbUrl) {
+      const fKey = v.key || k;
+      // Prioridade: dataUrl (memória) → thumbUrl (localStorage) → null (emoji)
+      const dataUrl = v.dataUrl || v.thumbUrl || null;
+      out.push({
+        key: fKey,
+        label: src[(fKey) + '_label'] || v.label || LEGENDAS_TECNICAS[fKey] || k,
+        dataUrl
+      });
+    }
+  });
+  // Fallback: fotos_json retornado pelo GAS após upload no Drive
+  if (!out.length && eq.fotos_json) {
+    try {
+      const parsed = JSON.parse(eq.fotos_json);
+      if (Array.isArray(parsed)) parsed.forEach(f => out.push({ key: f.key, label: f.label || f.key, dataUrl: null }));
+    } catch(e) {}
+  }
+  return out;
+}
+
+function toggleFotosEnvio(idx) {
+  const el = document.getElementById('fotos-envio-' + idx);
+  if (el) el.classList.toggle('open');
+}
+
+function selecionarFotoCapa(idx, key) {
+  if (SES.equipamentos[idx]) {
+    SES.equipamentos[idx].foto_capa_key = key;
+    saveOSDraft();
+  }
+}
+
+function openExportScreen() {
+  try {
+    autosaveDraft('before_export', true);
+    renderExport();
+    goTo('t-export');
+  } catch(e) {
+    console.error('openExportScreen:', e);
+    showToast('Erro ao abrir exportação: ' + e.message, 'err');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PDF — ENGINE (adaptado do PCF)
+// ═══════════════════════════════════════════════════════════════
+function limparTxtPDF(txt) {
+  if (!txt) return '';
+  // Preserva acentos PT-BR (Latin-1 / WinAnsi suportado pelo jsPDF/helvetica)
+  // Remove apenas emojis, símbolos Unicode fora de Latin-1 e caracteres de controle
+  return String(txt)
+    .replace(/[\u{1F300}-\u{1FFFF}]/gu, '')   // emojis e símbolos Unicode
+    .replace(/[\u0100-\u024F]/g, c => {
+      // Mapeia apenas caracteres Latin Extended que NÃO fazem parte do Latin-1 (0x00-0xFF)
+      // Esses já estão cobertos nativamente, então mantém como estão
+      return c;
+    })
+    .replace(/[^\x09\x0A\x0D\x20-\xFF]/g, ' ') // mantém Latin-1 completo (0x00-0xFF exceto controle)
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function gerarPDFUnico(idx) {
+  gerarPDFEquips([idx], false);
+}
+
+function gerarPDFEquip(modo) {
+  if (!SES.equipamentos.length) { showToast('Nenhum equipamento para gerar PDF','err'); return; }
+  if (modo === 'individual') {
+    // Gera PDF de cada um separadamente
+    SES.equipamentos.forEach((_, idx) => gerarPDFEquips([idx], false));
+  } else {
+    gerarPDFEquips(SES.equipamentos.map((_,i)=>i), true);
+  }
+}
+
+async function gerarPDFEquips(indices, completo) {
+  if (!window.jspdf) { showToast('Lib PDF não carregada','err'); return; }
+  const {jsPDF} = window.jspdf;
+  showLoading('Gerando PDF…');
+  await new Promise(r => setTimeout(r, 80));
+
+  try {
+  const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
+  const PW=210, PH=297, ML=14, MR=14;
+  const CW = PW-ML-MR;
+
+  const AZUL   = [26,58,107];
+  const AZUL2  = [46,91,168];
+  const CIANO  = [14,165,233];
+  const DARK   = [30,40,55];
+  const LGRAY  = [240,244,250];
+  const MGRAY  = [200,210,225];
+  const GREEN  = [34,197,94];
+  const WHITE  = [255,255,255];
+  const RED    = [239,68,68];
+
+  let pageNum = 0; // será incrementado na primeira página real
+  const agora = new Date();
+  const dataHoje = agora.toLocaleDateString('pt-BR');
+  const horaHoje = agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+
+  // ── Logo Engetap em SVG → desenhada como formas no PDF ──────────
+  // Representa o símbolo "E" angular da Engetap de forma vetorial
+  function desenharLogoEngetap(x, y, size) {
+    // size = altura total do símbolo em mm (~12mm para rodapé, ~30mm para capa)
+    const s = size / 30; // fator de escala (base desenhada em 30 unidades)
+    const lw = 1.2 * s;
+    doc.setDrawColor(26, 58, 107);
+    doc.setLineWidth(lw);
+    // Elemento externo — frame do E
+    doc.setFillColor(26, 58, 107);
+    // Barra superior
+    doc.rect(x, y, 18*s, 3*s, 'F');
+    // Barra vertical esquerda
+    doc.rect(x, y, 3*s, 30*s, 'F');
+    // Barra do meio (azul ciano)
+    doc.setFillColor(14,165,233);
+    doc.rect(x, y+12*s, 13*s, 3*s, 'F');
+    // Barra inferior
+    doc.setFillColor(26, 58, 107);
+    doc.rect(x, y+27*s, 18*s, 3*s, 'F');
+    // Detalhe diagonal (acento azul)
+    doc.setFillColor(14,165,233);
+    // Triângulo simplificado como retângulo inclinado — representado por um rect menor
+    doc.rect(x+14*s, y+1*s, 4*s, 10*s, 'F');
+  }
+
+  // Contexto do equipamento atual para cabeçalhos
+  let _currentEq = null;
+
+  function hdrPage(eq) {
+    // Cabeçalho completo para páginas de conteúdo (2ª página em diante)
+    const HDR_H = 20;
+    // Fundo gradiente simulado
+    doc.setFillColor(...AZUL);
+    doc.rect(0, 0, PW, HDR_H, 'F');
+    doc.setFillColor(...CIANO);
+    doc.rect(0, HDR_H-2, PW, 2, 'F');
+
+    // Mini logo à esquerda
+    desenharLogoEngetap(ML, 3, 10);
+
+    // Nome do cliente + equipamento (centro)
+    const cliente = limparTxtPDF(SES.os ? SES.os.cliente : 'Cliente');
+    const tag = eq ? limparTxtPDF(eq.tag || eq.numero_equip || 'Equipamento') : '';
+    const tipo = eq ? limparTxtPDF(labelTipo(eq.tipo)) : '';
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...WHITE);
+    doc.text(cliente.toUpperCase(), PW/2, 6, {align:'center'});
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(180, 210, 240);
+    doc.text(tag + (tipo ? ' · ' + tipo : ''), PW/2, 11, {align:'center'});
+
+    // Data e técnico (direita)
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(160, 195, 230);
+    const tecnico = limparTxtPDF(SES.inspetor?.nome || '—');
+    doc.text(dataHoje, PW-MR, 6, {align:'right'});
+    doc.text('Tec: ' + tecnico, PW-MR, 11, {align:'right'});
+
+    // Paginação
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...WHITE);
+    doc.text('Pag. ' + pageNum, PW-MR, 16.5, {align:'right'});
+
+    return HDR_H + 3; // y inicial do conteúdo
+  }
+
+  function ftr(eq) {
+    const FTR_H = 10;
+    const fy = PH - FTR_H;
+    doc.setFillColor(235, 240, 250);
+    doc.rect(0, fy, PW, FTR_H, 'F');
+    doc.setDrawColor(...MGRAY);
+    doc.setLineWidth(0.3);
+    doc.line(0, fy, PW, fy);
+
+    // Mini logo no rodapé
+    desenharLogoEngetap(ML, fy + 1.5, 6);
+
+    // Dados da empresa
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(6);
+    doc.setTextColor(...AZUL);
+    doc.text('ENGETAP ENGENHARIA LTDA', ML + 10, fy + 4);
+    doc.setFont('helvetica','normal');
+    doc.setTextColor(90, 110, 150);
+    doc.text('CREA-MG 64.569 · Inspeções NR-13 · Divinopolis-MG · (37) 3XXX-XXXX', ML + 10, fy + 7.5);
+
+    // OS à direita
+    const os = SES.os ? 'OS ' + limparTxtPDF(SES.os.numero_os) : '';
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(6);
+    doc.setTextColor(100,120,150);
+    doc.text(os, PW-MR, fy + 4, {align:'right'});
+    doc.text('Pag. ' + pageNum, PW-MR, fy + 7.5, {align:'right'});
+  }
+
+  function newPage(eq) {
+    ftr(eq);
+    doc.addPage();
+    pageNum++;
+    const startY = hdrPage(eq || _currentEq);
+    return startY;
+  }
+
+  function ck(y, need, eq) {
+    return (y + need > PH - 14) ? newPage(eq || _currentEq) : y;
+  }
+
+  function secTit(y, icon, title, cor) {
+    const c = cor || AZUL;
+    y = ck(y, 10);
+    doc.setFillColor(...c);
+    doc.rect(ML,y,CW,8,'F');
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...WHITE);
+    doc.text(limparTxtPDF(icon + ' ' + title.toUpperCase()), ML+3, y+5.5);
+    return y+10;
+  }
+
+  function row1(y, label, val, alt) {
+    const rh=6.5;
+    y=ck(y,rh);
+    if (alt){doc.setFillColor(247,250,255);doc.rect(ML,y,CW,rh,'F');}
+    doc.setDrawColor(...MGRAY);doc.setLineWidth(0.2);
+    doc.rect(ML,y,CW,rh,'S');
+    doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...AZUL2);
+    doc.text(limparTxtPDF(label),ML+2,y+4.5);
+    doc.setFont('helvetica','normal');doc.setTextColor(...DARK);
+    const v=val&&val!=='—'?String(val):'—';
+    doc.text(limparTxtPDF(v),ML+58,y+4.5);
+    return y+rh;
+  }
+
+  function row2(y, items) {
+    const rh=6.5;
+    y=ck(y,rh);
+    const cw2=CW/2;
+    items.forEach((item,i)=>{
+      const x=ML+i*cw2;
+      doc.setFillColor(i%2===0?247:252,250,255);
+      doc.rect(x,y,cw2,rh,'F');
+      doc.setDrawColor(...MGRAY);doc.setLineWidth(0.2);
+      doc.rect(x,y,cw2,rh,'S');
+      doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(...AZUL2);
+      doc.text(limparTxtPDF(item.l||''),x+2,y+4.5);
+      doc.setFont('helvetica','normal');doc.setTextColor(...DARK);
+      const v=(item.v&&item.v!=='—')?String(item.v):'—';
+      doc.text(limparTxtPDF(v),x+cw2*0.45,y+4.5);
+    });
+    return y+rh;
+  }
+
+  function badge(y, label, ok) {
+    const rh=7;
+    y=ck(y,rh);
+    const cor = ok==='Sim'?GREEN:ok==='Não'?RED:[150,150,170];
+    doc.setFillColor(...cor,30);
+    doc.rect(ML,y,CW/2-2,rh,'F');
+    doc.setDrawColor(...cor);doc.setLineWidth(0.3);
+    doc.rect(ML,y,CW/2-2,rh,'S');
+    doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...cor);
+    doc.text(limparTxtPDF(label+': '+ok),ML+3,y+4.8);
+    return y+rh+1;
+  }
+
+  // ── CAPA ────────────────────────────────────────────────────────
+  function gerarCapa(eq) {
+    // Fundo superior azul escuro (2/3 da página)
+    doc.setFillColor(...AZUL);
+    doc.rect(0, 0, PW, 180, 'F');
+    // Faixa decorativa ciano
+    doc.setFillColor(...CIANO);
+    doc.rect(0, 174, PW, 6, 'F');
+    // Fundo inferior branco suave
+    doc.setFillColor(245, 248, 255);
+    doc.rect(0, 180, PW, PH-180, 'F');
+
+    // ── Logo grande centralizada no topo ──
+    // Bloco com background levemente mais claro
+    doc.setFillColor(35, 70, 130);
+    doc.roundedRect(PW/2 - 40, 20, 80, 60, 4, 4, 'F');
+    // Logo (símbolo)
+    desenharLogoEngetap(PW/2 - 18, 28, 26);
+    // Nome ENGETAP
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(18);
+    doc.setTextColor(...WHITE);
+    doc.text('ENGETAP', PW/2 + 8, 43);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(7);
+    doc.setTextColor(...CIANO);
+    doc.text('INSPECOES EM VASOS DE PRESSAO', PW/2 + 8, 49);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(6);
+    doc.setTextColor(180, 210, 240);
+    doc.text('CREA-MG 64.569', PW/2 + 8, 54);
+
+    // ── Título do relatório ──
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(20);
+    doc.setTextColor(...WHITE);
+    doc.text('LEVANTAMENTO DE', PW/2, 105, {align:'center'});
+    doc.text('EQUIPAMENTOS NR-13', PW/2, 116, {align:'center'});
+    // Linha decorativa
+    doc.setDrawColor(...CIANO);
+    doc.setLineWidth(1.2);
+    doc.line(ML+20, 122, PW-MR-20, 122);
+
+    // Subtítulo ColectTap
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(8);
+    doc.setTextColor(180, 210, 240);
+    doc.text('ColectTap v2.6  |  Gerado em: ' + dataHoje + ' ' + horaHoje, PW/2, 130, {align:'center'});
+
+    // ── Bloco de dados do cliente ──
+    const bx=ML+10, bw=CW-20;
+    doc.setFillColor(20, 45, 90);
+    doc.roundedRect(bx, 140, bw, 30, 3, 3, 'F');
+    doc.setDrawColor(...CIANO);
+    doc.setLineWidth(0.8);
+    doc.roundedRect(bx, 140, bw, 30, 3, 3, 'S');
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...CIANO);
+    doc.text('DADOS DA ORDEM DE SERVICO', bx+6, 148);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...WHITE);
+    const cliente = SES.os ? SES.os.cliente : '—';
+    const osNum   = SES.os ? SES.os.numero_os : '—';
+    doc.setFont('helvetica','bold');
+    doc.text(limparTxtPDF('Cliente: '), bx+6, 156);
+    doc.setFont('helvetica','normal');
+    doc.text(limparTxtPDF(cliente), bx+28, 156);
+    doc.setFont('helvetica','bold');
+    doc.text(limparTxtPDF('OS: '), bx+6, 163);
+    doc.setFont('helvetica','normal');
+    doc.text(limparTxtPDF(osNum), bx+17, 163);
+    doc.setFont('helvetica','bold');
+    doc.text(limparTxtPDF('Data: '), bx+80, 163);
+    doc.setFont('helvetica','normal');
+    doc.text(dataHoje, bx+96, 163);
+
+    // ── Dados do equipamento (se individual) ──
+    if (eq) {
+      const tag  = eq.tag || eq.numero_equip || '—';
+      const tipo = labelTipo(eq.tipo);
+      const tec  = SES.inspetor?.nome || '—';
+      doc.setFillColor(240, 248, 255);
+      doc.roundedRect(ML, 188, CW, 50, 3, 3, 'F');
+      doc.setDrawColor(...AZUL2);
+      doc.setLineWidth(0.5);
+      doc.roundedRect(ML, 188, CW, 50, 3, 3, 'S');
+
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(7);
+      doc.setTextColor(...AZUL);
+      doc.text('DADOS DO EQUIPAMENTO', ML+5, 196);
+      doc.setDrawColor(...CIANO);
+      doc.setLineWidth(0.4);
+      doc.line(ML+5, 198, ML+CW-5, 198);
+
+      const campos = [
+        ['TAG / Identificação:', tag],
+        ['Tipo:', tipo],
+        ['Técnico Responsável:', tec],
+        ['Data da Coleta:', dataHoje],
+      ];
+      let cy = 204;
+      campos.forEach(([l, v]) => {
+        doc.setFont('helvetica','bold');
+        doc.setFontSize(7.5);
+        doc.setTextColor(...AZUL2);
+        doc.text(limparTxtPDF(l), ML+5, cy);
+        doc.setFont('helvetica','normal');
+        doc.setTextColor(...DARK);
+        doc.text(limparTxtPDF(String(v||'—')), ML+58, cy);
+        cy += 8;
+      });
+    } else {
+      // Relatório completo — lista os equipamentos
+      const total = indices.length;
+      doc.setFillColor(240, 248, 255);
+      doc.roundedRect(ML, 188, CW, Math.min(50, 10 + total*8), 3, 3, 'F');
+      doc.setDrawColor(...AZUL2);
+      doc.setLineWidth(0.5);
+      doc.roundedRect(ML, 188, CW, Math.min(50, 10 + total*8), 3, 3, 'S');
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(7);
+      doc.setTextColor(...AZUL);
+      doc.text('EQUIPAMENTOS INCLUIDOS NESTE RELATORIO: ' + total, ML+5, 196);
+      doc.setDrawColor(...CIANO);
+      doc.setLineWidth(0.4);
+      doc.line(ML+5, 198, ML+CW-5, 198);
+      let cy = 204;
+      indices.slice(0,5).forEach((idx, i) => {
+        const e = SES.equipamentos[idx];
+        const tagE = limparTxtPDF((e.tag || e.numero_equip || ('EQ-'+(idx+1))) + ' — ' + labelTipo(e.tipo));
+        doc.setFont('helvetica','normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(...DARK);
+        doc.text((i+1)+'. '+tagE, ML+5, cy);
+        cy += 7;
+      });
+      if (total > 5) {
+        doc.setFont('helvetica','italic');
+        doc.setFontSize(7);
+        doc.setTextColor(120,140,170);
+        doc.text('... e mais '+(total-5)+' equipamento(s)', ML+5, cy);
+      }
+    }
+
+    // ── Rodapé da capa ──
+    doc.setFillColor(...AZUL);
+    doc.rect(0, PH-20, PW, 20, 'F');
+    desenharLogoEngetap(ML, PH-17, 9);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(180, 210, 240);
+    doc.text('Engetap Engenharia Ltda · CREA-MG 64.569 · Divinopolis-MG', ML+14, PH-12);
+    doc.text('Levantamento NR-13 · Documento Tecnico Sigiloso', ML+14, PH-7);
+    doc.setTextColor(...CIANO);
+    doc.setFont('helvetica','bold');
+    doc.text('engetap.com.br', PW-MR, PH-12, {align:'right'});
+  }
+
+  // ── LOOP POR EQUIPAMENTO ──
+  let primeiraEquipamentoGlobal = true;
+  for (let ii=0; ii<indices.length; ii++) {
+    const eq = SES.equipamentos[indices[ii]];
+    _currentEq = eq;
+    const d = eq;
+    const tag = d.tag || d.numero_equip || ('EQ-'+(indices[ii]+1));
+    const tipo = labelTipo(d.tipo);
+
+    // ── CAPA DE CADA EQUIPAMENTO (individual ou por equip no completo) ──
+    if (!primeiraEquipamentoGlobal) {
+      // Para PDF completo: nova capa por equipamento
+      ftr(eq);
+      doc.addPage();
+      pageNum++;
+    } else {
+      pageNum = 1;
+    }
+    primeiraEquipamentoGlobal = false;
+
+    // Gerar capa (individual = eq, completo = null na primeira, eq nas seguintes)
+    gerarCapa(indices.length === 1 ? eq : eq);
+
+    // ── Primeira página de conteúdo ──
+    ftr(eq);
+    doc.addPage();
+    pageNum++;
+    let y = hdrPage(eq);
+
+    // Cabeçalho do equipamento na primeira página de conteúdo
+    y=ck(y,14,eq);
+    doc.setFillColor(...CIANO);
+    doc.rect(ML,y,CW,11,'F');
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(13);
+    doc.setTextColor(...WHITE);
+    doc.text(limparTxtPDF(tag + '  ·  ' + tipo.toUpperCase()), ML+4, y+7.5);
+    y+=14;
+
+    // OS / Cliente
+    y=ck(y,8,eq);
+    doc.setFillColor(...LGRAY);
+    doc.rect(ML,y,CW,7,'F');
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...DARK);
+    const osLbl = SES.os ? 'OS: ' + SES.os.numero_os + '  |  Cliente: ' + SES.os.cliente + '  |  Técnico: ' + (SES.inspetor?.nome||'—') + '  |  Data: ' + dataHoje : '';
+    doc.text(limparTxtPDF(osLbl), ML+3, y+5);
+    y+=9;
+
+    // Origem da Coleta
+    y = secTit(y,'↔','Origem da Coleta');
+    const modoColeta = (d.modo_coleta_inicial || 'campo') === 'documento' ? 'Documentacao' : 'Equipamento em campo';
+    y = row1(y,'Iniciada por', modoColeta, false);
+    y = row1(y,'Status de campo', d.status_coleta_campo || 'nao informado', true);
+    y = row1(y,'Status documental', d.status_coleta_documentos || 'nao informado', false);
+    if ((d.pendencias_campo || d.pendencias_documentais) && y < PH-42) {
+      y = row1(y,'Pendencias de campo', d.pendencias_campo || '—', true);
+      y = row1(y,'Pendencias documentais', d.pendencias_documentais || '—', false);
+    }
+    y += 2;
+
+    // ENQ — ENQUADRAMENTO NR13
+    const enquadraVal = d.enquadra_nr13 || '—';
+    const naoEnq = d._nao_enquadrado || d.status_completude === 'nao_enquadrado' || enquadraVal === 'Não enquadra conforme 13.2.2';
+    if (naoEnq) {
+      y = secTit(y,'⚠️','Registro de Nao Enquadramento NR13', [180,60,0]);
+      y = row1(y,'Enquadramento', enquadraVal, false);
+      y = row1(y,'Motivo', d.motivo_nao_enquadramento || '—', true);
+      y = row1(y,'Descricao', d.descricao_nao_enquadramento || '—', false);
+      y = row1(y,'Acao Recomendada', d.acao_nao_enquadramento || '—', true);
+      if (d.obs_gerais) {
+        y=ck(y,10);
+        doc.setFillColor(...LGRAY);doc.rect(ML,y,CW,8,'F');
+        doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(...AZUL2);
+        doc.text('Observações:',ML+2,y+4.5);
+        doc.setFont('helvetica','normal');doc.setTextColor(...DARK);
+        const ol=doc.splitTextToSize(limparTxtPDF(d.obs_gerais),CW-4);
+        doc.text(ol,ML+2,y+8.5);
+        y+=Math.max(8,ol.length*4+7);
+      }
+      y+=4;
+      // Nota técnica obrigatória
+      y=ck(y,12);
+      doc.setFillColor(255,247,230);doc.rect(ML,y,CW,10,'F');
+      doc.setDrawColor(180,60,0);doc.setLineWidth(0.5);doc.rect(ML,y,CW,10,'S');
+      doc.setFont('helvetica','italic');doc.setFontSize(7.5);doc.setTextColor(120,40,0);
+      const nota = 'NOTA: Este e um Registro de Nao Enquadramento NR13, nao um Relatorio de Inspecao NR13 completo. O equipamento foi avaliado e nao se enquadra nos criterios da NR13 item 13.2.2.';
+      const notaLines = doc.splitTextToSize(limparTxtPDF(nota), CW-4);
+      doc.text(notaLines, ML+2, y+4);
+      y+=12;
+    } else if (enquadraVal !== '—') {
+      y = secTit(y,'⚖️','Enquadramento NR13');
+      y = row1(y,'Status', enquadraVal, false);
+      if (d.situacao_nr13) y = row1(y,'Situação NR-13', d.situacao_nr13, true);
+      if (d.base_enquadramento) {
+        y=ck(y,8);
+        doc.setFillColor(...LGRAY); doc.rect(ML,y,CW,7,'F');
+        doc.setFont('helvetica','italic'); doc.setFontSize(7); doc.setTextColor(80,90,110);
+        const l=doc.splitTextToSize(limparTxtPDF('Base: '+d.base_enquadramento), CW-4);
+        doc.text(l, ML+2, y+4.5);
+        y += Math.max(7, l.length*4+2);
+      }
+      y += 2;
+    }
+
+    // Seções A-F só para equipamentos enquadrados
+    if (!naoEnq) {
+    // A — IDENTIFICAÇÃO
+    y = secTit(y,'A','Identificação');
+    y = row2(y,[{l:'TAG',v:d.tag},{l:'Fabricante',v:d.fabricante}]);
+    y = row2(y,[{l:'N° Equipamento',v:d.numero_equip},{l:'Ano de Fabricação',v:d.ano_fabricacao}]);
+    y = row2(y,[{l:'Categoria NR-13',v:d.categoria},{l:'Código de Projeto',v:d.codigo_projeto==='Outro'?(d.codigo_projeto_outro||'Outro'):d.codigo_projeto}]);
+    y = row1(y,'Localização na Planta',d.localizacao,false);
+    y = row2(y,[{l:'Placa Indelevel',v:d.placa_indelevel},{l:'Necessita Ident.TAG/Cat.',v:d.necessita_tag}]);
+    y+=2;
+
+    // B — PROJETO
+    y = secTit(y,'B','Dados de Projeto');
+    y = row2(y,[{l:'PMTA (kgf/cm²)',v:d.pmta},{l:'Pressão de Trabalho (kgf/cm²)',v:d.pressao_trabalho}]);
+    y = row1(y,'Pressão de Teste Hidrostático (kgf/cm²)', d.pressao_teste, false);
+    y = row1(y,'Fluido de Trabalho', d.fluido==='Outro' ? d.fluido_outro : d.fluido, false);
+    y = row2(y,[{l:'Classe do Fluido',v:d.classe_fluido},{l:'Já Inspecionado',v:d.ja_inspecionado}]);
+    y = row2(y,[{l:'Ano Última Inspeção',v:d.ano_ultima_inspecao},{l:'Tipo Última Inspeção',v:d.tipo_ultima_inspecao}]);
+    y+=2;
+
+    // C — DIMENSÕES
+    y = secTit(y,'C','Dimensões / Dados Construtivos');
+    if (d.tipo==='vaso') {
+      const diam = d.diametro_externo_mm || d.diametro_externo_calculado_mm || d.diametro || '—';
+      const modoDiam = d.modo_medicao_diametro || '—';
+      y = row2(y,[{l:'Modo de medição do diâmetro',v:modoDiam},{l:'Diâmetro Externo (mm)',v:diam}]);
+      if (d.circunferencia_mm) y = row2(y,[{l:'Circunferência medida (mm)',v:d.circunferencia_mm},{l:'Diâmetro calc. C/pi (mm)',v:d.diametro_externo_calculado_mm||'—'}]);
+      y = row2(y,[{l:'Comprimento/Altura (mm)',v:d.comprimento},{l:'Volume (litros)',v:d.volume}]);
+      y = row2(y,[{l:'Espessura de Parede (mm)',v:d.espessura_parede},{l:'Material do Casco',v:d.material_casco}]);
+    } else if (d.tipo==='caldeira') {
+      y = row2(y,[{l:'Capacidade Vapor (kg/h)',v:d.capacidade_vapor},{l:'Área Superf. Aquecimento (m²)',v:d.area_aquecimento}]);
+      y = row2(y,[{l:'Combustível',v:d.combustivel},{l:'Pressão de Projeto (kgf/cm²)',v:d.pressao_projeto}]);
+      y = row1(y,'Material do Casco',d.material_casco,true);
+    } else if (d.tipo==='tubulacao') {
+      y = row2(y,[{l:'Bitola Nominal',v:d.bitola==='Outro'?d.bitola_outro:d.bitola},{l:'Comprimento (m)',v:d.comprimento_m}]);
+      y = row2(y,[{l:'Espessura de Parede (mm)',v:d.espessura_parede},{l:'Classe de Pressão (ANSI/ASME)',v:d.classe_pressao}]);
+      y = row2(y,[{l:'Material',v:d.material},{l:'Isolamento Térmico',v:d.isolamento}]);
+    } else if (d.tipo==='tanque') {
+      y = row2(y,[{l:'Diametro (m)',v:d.diametro},{l:'Altura (m)',v:d.altura}]);
+      y = row2(y,[{l:'Volume (m3)',v:d.volume},{l:'Tipo de Teto',v:d.teto}]);
+      y = row2(y,[{l:'Material',v:d.material},{l:'Revestimento',v:d.revestimento}]);
+    }
+    y+=2;
+
+    // D — DISPOSITIVOS
+    y = secTit(y,'D','Dispositivos de Segurança');
+    y = row2(y,[{l:'Possui manômetro',v:d.possui_manometro},{l:'Manômetro calibrado',v:d.manometro_calibrado}]);
+    if (d.possui_manometro==='Sim') {
+      y = row2(y,[{l:'N° Cert. Calib. Manômetro',v:d.cert_manometro},{l:'Vencimento Calibração',v:d.venc_manometro}]);
+    }
+    y = row2(y,[{l:'Possui PSV (válvula segurança)',v:d.possui_valvula},{l:'PSV calibrada',v:d.valvula_calibrada}]);
+    if (d.possui_valvula==='Sim') {
+      y = row2(y,[{l:'PA da PSV (kgf/cm2)',v:d.pa_valvula},{l:'Adequada ao equipamento',v:d.valvula_adequada}]);
+      y = row2(y,[{l:'N° Cert. Calib. PSV',v:d.cert_valvula},{l:'Vencimento Calibração PSV',v:d.venc_valvula}]);
+      if (d.motivo_valvula_inadequada) y = row1(y,'Motivo inadequação PSV',d.motivo_valvula_inadequada,true);
+    }
+    y = row2(y,[{l:'Possui purgador',v:d.possui_purgador},{l:'Possui DCBI',v:d.possui_dcbi}]);
+    y+=2;
+
+    // E — DOCUMENTAÇÃO
+    y = secTit(y,'E','Documentação');
+    const checks = d._checks || {};
+    const docsPresentes = Object.entries(checks).filter(([,v])=>v).map(([k])=>
+      k.replace('doc_','').replace(/_/g,' ')
+    );
+    const docsAusentes = Object.entries(checks).filter(([,v])=>!v).map(([k])=>
+      k.replace('doc_','').replace(/_/g,' ')
+    );
+    if (docsPresentes.length) {
+      y=ck(y,8);
+      doc.setFillColor(240,255,245);
+      doc.rect(ML,y,CW,7,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(22,101,52);
+      doc.text('Presentes:', ML+2,y+5);
+      doc.setFont('helvetica','normal');doc.setTextColor(...DARK);
+      const dp = doc.splitTextToSize(limparTxtPDF(docsPresentes.join('  |  ')),CW-25);
+      doc.text(dp,ML+22,y+5);
+      y+=Math.max(7,dp.length*4.5+2);
+    }
+    if (docsAusentes.length) {
+      y=ck(y,8);
+      doc.setFillColor(255,240,240);
+      doc.rect(ML,y,CW,7,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(153,27,27);
+      doc.text('Ausentes:', ML+2,y+5);
+      doc.setFont('helvetica','normal');doc.setTextColor(...DARK);
+      const da = doc.splitTextToSize(limparTxtPDF(docsAusentes.join('  |  ')),CW-25);
+      doc.text(da,ML+22,y+5);
+      y+=Math.max(7,da.length*4.5+2);
+    }
+    if (d.obs_docs) {
+      y=ck(y,8);
+      doc.setFillColor(...LGRAY);doc.rect(ML,y,CW,7,'F');
+      doc.setFont('helvetica','italic');doc.setFontSize(7);doc.setTextColor(80,90,110);
+      const l=doc.splitTextToSize(limparTxtPDF('Obs: '+d.obs_docs),CW-4);
+      doc.text(l,ML+2,y+4.5);
+      y+=Math.max(7,l.length*4+2);
+    }
+    y+=2;
+
+    // F — CONDIÇÕES DE SERVIÇO
+    y = secTit(y,'F','Condições de Serviço');
+    y = row2(y,[{l:'Trabalho em altura',v:d.trabalho_altura},{l:'Necessita TH',v:d.necessita_th}]);
+    y = row2(y,[{l:'Espaço confinado',v:d.espaco_confinado},{l:'Necessita andaime',v:d.necessita_scaffold}]);
+    const endsChecks = Object.entries(d._checks||{}).filter(([k,v])=>!k.startsWith('doc_')&&v).map(([k])=>k.replace(/_/g,' '));
+    if (endsChecks.length) {
+      y=ck(y,8);
+      doc.setFillColor(255,247,230);doc.rect(ML,y,CW,7,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(120,60,0);
+      doc.text('END necessários:',ML+2,y+5);
+      doc.setFont('helvetica','normal');doc.setTextColor(...DARK);
+      const el=doc.splitTextToSize(limparTxtPDF(endsChecks.join('  |  ')),CW-32);
+      doc.text(el,ML+34,y+5);
+      y+=Math.max(7,el.length*4+2);
+    }
+    if (d.processo) {
+      y=ck(y,10);
+      doc.setFillColor(...LGRAY);doc.rect(ML,y,CW,8,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(...AZUL2);
+      doc.text('Informações do Processo:',ML+2,y+4.5);
+      doc.setFont('helvetica','normal');doc.setTextColor(...DARK);
+      const pl=doc.splitTextToSize(limparTxtPDF(d.processo),CW-4);
+      doc.text(pl,ML+2,y+8.5);
+      y+=Math.max(8,pl.length*4+6);
+    }
+    y+=2;
+
+    // G — OBSERVAÇÕES
+    if (d.obs_gerais || d.obs_inspetor || d.risco_observado) {
+      y = secTit(y,'G','Observações e Recomendações');
+      if (d.obs_gerais) {
+        y=ck(y,10);
+        doc.setFillColor(...LGRAY);doc.rect(ML,y,CW,8,'F');
+        doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(...AZUL2);
+        doc.text('Observações Gerais:',ML+2,y+4.5);
+        doc.setFont('helvetica','normal');doc.setTextColor(...DARK);
+        const ol=doc.splitTextToSize(limparTxtPDF(d.obs_gerais),CW-4);
+        doc.text(ol,ML+2,y+9);
+        y+=Math.max(8,ol.length*4+7);
+      }
+      if (d.obs_inspetor) {
+        y=ck(y,10);
+        doc.setFillColor(240,255,245);doc.rect(ML,y,CW,8,'F');
+        doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(22,101,52);
+        doc.text('Recomendações do Inspetor:',ML+2,y+4.5);
+        doc.setFont('helvetica','normal');doc.setTextColor(...DARK);
+        const rl=doc.splitTextToSize(limparTxtPDF(d.obs_inspetor),CW-4);
+        doc.text(rl,ML+2,y+9);
+        y+=Math.max(8,rl.length*4+7);
+      }
+      if (d.risco_observado) {
+        y=ck(y,10);
+        doc.setFillColor(255,240,240);doc.rect(ML,y,CW,8,'F');
+        doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(153,27,27);
+        doc.text('Riscos Observados:',ML+2,y+4.5);
+        doc.setFont('helvetica','normal');doc.setTextColor(...DARK);
+        const rl=doc.splitTextToSize(limparTxtPDF(d.risco_observado),CW-4);
+        doc.text(rl,ML+2,y+9);
+        y+=Math.max(8,rl.length*4+7);
+      }
+      y+=2;
+    }
+
+    } // end if(!naoEnq) — seções A-F
+
+    // FOTOS — agrupadas por seção, sem lacunas
+    const fotosPorSecao = normalizarFotosPDF(eq);
+    const secaoNomes = {
+      enquadramento: 'Enquadramento NR-13',
+      ident:         'Identificação / Placa',
+      docs:          'Documentação',
+      projeto:       'Dados de Projeto',
+      dimensoes:     'Dimensões',
+      disp:          'Dispositivos de Segurança',
+      servico:       'Instalação e Acesso',
+      obs:           'Observações / Anomalias',
+    };
+    const todasAsFotos = normalizarFotosParaEnvio(eq);
+    if (todasAsFotos.length) {
+      // Página nova de fotos
+      y = newPage(eq);
+      const COLS=2, GAP=4;
+      const PW2=(CW-GAP*(COLS-1))/COLS;
+      const MAX_H=65;
+      const CAP_H=10;
+
+      // Título da seção de fotos
+      doc.setFillColor(40, 60, 100);
+      doc.rect(ML, y, CW, 9, 'F');
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(10);
+      doc.setTextColor(...WHITE);
+      doc.text('REGISTRO FOTOGRAFICO', ML+3, y+6.2);
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(180, 210, 240);
+      doc.text(limparTxtPDF(tag + ' · ' + tipo), PW-MR, y+6.2, {align:'right'});
+      y += 12;
+
+      // Iterar por seção conhecida, depois o que sobrar — SOMENTE seções com fotos
+      const secsOrdem = Object.keys(secaoNomes);
+      const secsFotos = { ...fotosPorSecao };
+      const ordenadas = [];
+      secsOrdem.forEach(s => { if (secsFotos[s]?.length) { ordenadas.push([s, secsFotos[s]]); delete secsFotos[s]; } });
+      Object.entries(secsFotos).forEach(([s, fs]) => { if (fs?.length) ordenadas.push([s, fs]); });
+
+      for (const [secId, fotos] of ordenadas) {
+        const secNome = secaoNomes[secId] || secId.replace(/_/g,' ');
+        // Título da sub-seção
+        y = ck(y, 14, eq);
+        doc.setFillColor(220, 232, 250);
+        doc.rect(ML, y, CW, 7, 'F');
+        doc.setDrawColor(...AZUL2);
+        doc.setLineWidth(0.4);
+        doc.rect(ML, y, CW, 7, 'S');
+        doc.setFillColor(...CIANO);
+        doc.rect(ML, y, 3, 7, 'F');
+        doc.setFont('helvetica','bold');
+        doc.setFontSize(8);
+        doc.setTextColor(...AZUL);
+        doc.text(limparTxtPDF(secNome.toUpperCase()), ML+6, y+4.8);
+        doc.setFont('helvetica','normal');
+        doc.setFontSize(7);
+        doc.setTextColor(100,130,170);
+        doc.text(fotos.length + ' foto(s)', PW-MR, y+4.8, {align:'right'});
+        y += 9;
+
+        // ── Grid de fotos sem lacunas: colocar as fotos compactadas ──
+        // Calcular alturas reais de cada foto
+        const fotoBlocks = fotos.map(ph => {
+          const ratio = (ph.h && ph.w) ? (ph.h / ph.w) : (3/4);
+          const imgH = Math.min(MAX_H, PW2 * ratio);
+          const blockH = imgH + CAP_H;
+          return { ph, imgH, blockH };
+        });
+
+        // Distribuir em linhas de 2, verificando quebra de página por linha
+        let i = 0;
+        while (i < fotoBlocks.length) {
+          const left  = fotoBlocks[i];
+          const right = i+1 < fotoBlocks.length ? fotoBlocks[i+1] : null;
+          const lineH = right ? Math.max(left.blockH, right.blockH) : left.blockH;
+
+          // Verificar se cabe na página atual
+          if (y + lineH > PH - 18) {
+            y = newPage(eq);
+          }
+
+          // Desenhar foto esquerda
+          const drawFoto = (fb, colIdx) => {
+            const x = ML + colIdx * (PW2 + GAP);
+            // Fundo da célula
+            doc.setFillColor(245, 248, 255);
+            doc.rect(x, y, PW2, lineH, 'F');
+            doc.setDrawColor(...MGRAY);
+            doc.setLineWidth(0.25);
+            doc.rect(x, y, PW2, lineH, 'S');
+            // Imagem
+            try {
+              let w2 = PW2 - 4, h2 = fb.imgH - 2;
+              const r2 = (fb.ph.w||800) / (fb.ph.h||600);
+              if (w2/r2 > h2) { w2 = h2 * r2; } else { h2 = w2 / r2; }
+              const imgX = x + (PW2 - w2) / 2;
+              const imgY = y + 1;
+              doc.addImage(fb.ph.dataUrl, 'JPEG', imgX, imgY, w2, h2);
+            } catch(_) {
+              doc.setFillColor(230, 235, 245);
+              doc.rect(x+2, y+2, PW2-4, fb.imgH-4, 'F');
+              doc.setFont('helvetica','italic');
+              doc.setFontSize(6.5);
+              doc.setTextColor(150,160,180);
+              doc.text('Foto indisponivel', x + PW2/2, y + fb.imgH/2, {align:'center'});
+            }
+            // Legenda
+            const legenda = fb.ph.label || LEGENDAS_TECNICAS[fb.ph.key] || fb.ph.key.replace(/foto_/,'').replace(/_/g,' ');
+            doc.setFont('helvetica','bold');
+            doc.setFontSize(6);
+            doc.setTextColor(...AZUL2);
+            const legTxt = doc.splitTextToSize(limparTxtPDF(legenda), PW2-4);
+            doc.text(legTxt[0], x + PW2/2, y + lineH - 4, {align:'center'});
+            if (legTxt[1]) doc.text(legTxt[1], x + PW2/2, y + lineH - 1, {align:'center'});
+          };
+
+          drawFoto(left, 0);
+          if (right) drawFoto(right, 1);
+
+          y += lineH + GAP;
+          i += right ? 2 : 1;
+        }
+        y += 3;
+      }
+    }
+
+    // ── Assinatura / Encerramento ──────────────────────────────────
+    y = ck(y, 38, eq);
+    y += 6;
+    // Linha de assinatura
+    doc.setFillColor(245, 248, 255);
+    doc.rect(ML, y, CW, 30, 'F');
+    doc.setDrawColor(...MGRAY);
+    doc.setLineWidth(0.3);
+    doc.rect(ML, y, CW, 30, 'S');
+    // Título
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...AZUL);
+    doc.text('ASSINATURA E RESPONSABILIDADE TECNICA', ML+3, y+5.5);
+    doc.setDrawColor(...CIANO);
+    doc.setLineWidth(0.4);
+    doc.line(ML+3, y+7, ML+CW-3, y+7);
+    // Linhas de assinatura
+    doc.setDrawColor(...MGRAY);
+    doc.setLineWidth(0.3);
+    doc.line(ML+5, y+18, ML+85, y+18);
+    doc.line(ML+95, y+18, ML+CW-5, y+18);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(7);
+    doc.setTextColor(100,120,150);
+    doc.text(limparTxtPDF('Técnico: '+(SES.inspetor?.nome||'________________________________')), ML+5, y+22);
+    doc.text('Data: ___/___/______', ML+96, y+22);
+    doc.text('CREA/CAU: _______________', ML+5, y+27);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...AZUL);
+    doc.text('Engetap Engenharia Ltda · CREA-MG 64.569', PW-MR, y+27, {align:'right'});
+    y += 32;
+
+    ftr(eq);
+  }
+
+  const cliente = SES.os ? SES.os.cliente.replace(/[^\w\s]/g,'').substring(0,20).trim() : 'Colect';
+  const osNum = SES.os ? SES.os.numero_os.replace(/[^\w]/g,'') : '';
+  const dataStr = agora.toLocaleDateString('pt-BR').replace(/\//g,'-');
+  const suffix = indices.length===1 ? ('_'+( SES.equipamentos[indices[0]].tag || 'EQ'+(indices[0]+1) )) : '_COMPLETO';
+  const nome = `Engetap_NR13_${osNum}_${cliente}${suffix}_${dataStr}.pdf`.replace(/\s+/g,'_');
+  doc.save(nome);
+  showToast('✅ PDF gerado: ' + nome);
+  } catch(e) {
+    console.error('gerarPDFEquips:', e);
+    showToast('Erro ao gerar PDF: ' + e.message, 'err');
+  } finally {
+    hideLoading();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EXPORTAR CSV
+// ═══════════════════════════════════════════════════════════════
+function exportarCSV() {
+  if (!SES.equipamentos.length) { showToast('Nenhum equipamento','err'); return; }
+  const cabecalho = [
+    'OS','Cliente','TAG','Tipo','Fabricante','N_Equip','Ano_Fab','Categoria','Codigo_Projeto',
+    'Localizacao','Placa_Indelevel','PMTA','P_Trabalho','P_Teste','Temperatura','Fluido',
+    'Classe_Fluido','Volume','Diametro','Comprimento','Material','Manometro','Man_Calibrado',
+    'Cert_Man','PSV','PSV_Calibrada','Cert_PSV','PA_PSV','Purgador','DCBI',
+    'Trab_Altura','Necessita_TH','Espaco_Confinado','Obs_Gerais','Obs_Inspetor',
+    'Enquadra_NR13','Motivo_Nao_Enquadramento','Acao_Nao_Enquadramento','Status_Completude',
+    'ID_Equipamento_Colect','Sync_Status',
+    'Modo_Coleta_Inicial','Status_Coleta_Campo','Status_Coleta_Docs','Pendencias_Campo','Pendencias_Documentais'
+  ];
+  const linhas = SES.equipamentos.map(eq => [
+    SES.os?.numero_os, SES.os?.cliente, eq.tag, labelTipo(eq.tipo), eq.fabricante,
+    eq.numero_equip, eq.ano_fabricacao, eq.categoria, eq.codigo_projeto,
+    eq.localizacao, eq.placa_indelevel, eq.pmta, eq.pressao_trabalho,
+    eq.pressao_teste, eq.temperatura, eq.fluido==='Outro'?eq.fluido_outro:eq.fluido,
+    eq.classe_fluido, eq.volume, eq.diametro, eq.comprimento||eq.comprimento_m,
+    eq.material||eq.material_casco, eq.possui_manometro, eq.manometro_calibrado,
+    eq.cert_manometro, eq.possui_valvula, eq.valvula_calibrada, eq.cert_valvula,
+    eq.pa_valvula, eq.possui_purgador, eq.possui_dcbi,
+    eq.trabalho_altura, eq.necessita_th, eq.espaco_confinado,
+    (eq.obs_gerais||'').replace(/\n/g,' '), (eq.obs_inspetor||'').replace(/\n/g,' '),
+    eq.enquadra_nr13 || '',
+    eq.motivo_nao_enquadramento || '',
+    eq.acao_nao_enquadramento || '',
+    eq.status_completude || (eq._nao_enquadrado ? 'nao_enquadrado' : eq._salvo ? 'salvo' : 'rascunho'),
+    eq.id_equipamento_colect || '',
+    eq.sync_status || 'local',
+    eq.modo_coleta_inicial || '',
+    eq.status_coleta_campo || '',
+    eq.status_coleta_documentos || '',
+    (eq.pendencias_campo || '').replace(/\n/g,' '),
+    (eq.pendencias_documentais || '').replace(/\n/g,' ')
+  ].map(v => '"'+(v===undefined||v===null?'':String(v).replace(/"/g,'""'))+'"').join(','));
+
+  const csv = [cabecalho.join(','), ...linhas].join('\r\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const osN = SES.os ? SES.os.numero_os.replace(/[^\w]/g,'') : 'OS';
+  a.download = `Engetap_NR13_${osN}_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✅ CSV exportado!');
+  autosaveDraft('after_csv', true);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LEGENDAS TÉCNICAS DAS FOTOS
+// ═══════════════════════════════════════════════════════════════
+const LEGENDAS_TECNICAS = {
+  foto_placa:       'Foto da Placa de Identificação Indelével',
+  foto_tag:         'Foto da TAG / Código de Identificação',
+  foto_geral_equip: 'Foto Geral do Equipamento',
+  foto_psv:         'Foto da Válvula de Segurança / Alívio',
+  foto_manometro:   'Foto do Manômetro / Indicador de Pressão',
+  foto_cert_psv:    'Foto do Certificado de Calibração da PSV',
+  foto_cert_man:    'Foto do Certificado de Calibração do Manômetro',
+  foto_cert_psv_doc:'Foto do Certificado de Calibração da PSV',
+  foto_prontuario:  'Foto do Prontuário / Folha de Dados',
+  foto_registro_seg:'Foto do Registro de Segurança',
+  foto_rel_anterior:'Foto do Relatório de Inspeção Anterior',
+  foto_folha_dados: 'Foto do Prontuário / Folha de Dados',
+  foto_trecho_pmta: 'Foto da Placa com PMTA',
+  foto_medicao:     'Foto das Dimensões Medidas',
+  foto_corpo:       'Foto do Corpo do Equipamento',
+  foto_conexoes:    'Foto das Conexões e Bocais',
+  foto_acesso:      'Foto das Condições de Acesso',
+  foto_ambiente:    'Foto do Ambiente / Instalação',
+  foto_risco:       'Foto de Risco, Restrição ou Anomalia Observada',
+  foto_local:       'Foto Geral do Equipamento e Local de Instalação',
+  foto_docs:        'Foto dos Documentos Existentes',
+  foto_abastec_emerg:    'Foto do Sistema de Abastecimento de Emergência',
+  foto_indicador_nivel:  'Foto do Indicador de Nível',
+  foto_seg_adicionais:   'Foto de Sistemas de Segurança Adicionais',
+  foto_descarga_fundo:   'Foto da Descarga de Fundo',
+  foto_ambiente_cal:     'Foto do Ambiente de Instalação (Caldeira)',
+  foto_combate_inc:      'Foto dos Sistemas de Combate a Incêndio',
+  foto_quebra_vacuo:     'Foto da Válvula Quebra-Vácuo',
+  foto_geral_tub:        'Foto Geral da Tubulação',
+  foto_ponto_alto:       'Foto do Ponto Mais Alto da Tubulação',
+};
+
+// ═══════════════════════════════════════════════════════════════
+// NORMALIZAÇÃO DE FOTOS
+// ═══════════════════════════════════════════════════════════════
+function normalizarFotosParaEnvio(eq) {
+  const src = eq._fotos || {};
+  const out = [];
+  Object.entries(src).forEach(([k, v]) => {
+    if (k.endsWith('_label') || !v || !v.dataUrl) return;
+    const fotoKey = v.key || k;
+    out.push({
+      key:       fotoKey,
+      label:     src[fotoKey + '_label'] || v.label || LEGENDAS_TECNICAS[fotoKey] || fotoKey,
+      secao:     v.secao || 'obs',
+      campo_ref: v.campo_ref || fotoKey,
+      origem:    v.origem || 'desconhecida',
+      created_at: v.created_at || '',
+      id_equipamento_colect: v.id_equipamento_colect || '',
+      dataUrl:   v.dataUrl,
+      w: v.w || 0,
+      h: v.h || 0,
+    });
+  });
+  return out;
+}
+
+function normalizarFotosPDF(eq) {
+  return normalizarFotosParaEnvio(eq).reduce((acc, f) => {
+    const sec = f.secao || 'obs';
+    (acc[sec] ||= []).push(f);
+    return acc;
+  }, {});
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CÓDIGO DE PROJETO (select por tipo)
+// ═══════════════════════════════════════════════════════════════
+function getCodigoProjetoSelect(t) {
+  const mapas = {
+    vaso:      ['ASME BPVC Section VIII Div. 1','ASME BPVC Section VIII Div. 2','ASME BPVC Section VIII Div. 3','ASME BPVC Section X','Código não identificado','Outro'],
+    caldeira:  ['ASME BPVC Section I','ASME BPVC Section IV','ASME BPVC Section VIII, se aplicável','Código não identificado','Outro'],
+    tubulacao: ['ASME B31.1','ASME B31.3','ASME B31.9','API 570','Código não identificado','Outro'],
+    tanque:    ['API 650','API 653','ASME Section VIII, se pressurizado','Código não identificado','Outro'],
+  };
+  return (mapas[t] || ['Código não identificado','Outro']);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ENVIAR AO GAS — versão corrigida
+// ═══════════════════════════════════════════════════════════════
+async function enviarGAS() {
+  if (!SES.equipamentos.length) { showToast('Nenhum equipamento','err'); return; }
+  if (DEMO_MODE) { showToast('Modo demo — GAS não configurado','warn'); return; }
+
+  // Garantir IDs e autosave antes do envio
+  ensureVisitId();
+  autosaveDraft('before_send', true);
+
+  showLoading('Preparando envio…');
+  await new Promise(r => setTimeout(r, 80));
+
+  try {
+    const payload = {
+      id_visita_colect: SES.id_visita_colect,
+      id_os:      SES.os.id_os,
+      numero_os:  SES.os.numero_os,
+      id_cliente: SES.os.id_cliente,
+      cliente:    SES.os.cliente,
+      id_inspetor: SES.inspetor.id_inspetor,
+      inspetor:   SES.inspetor.nome,
+      app_version: APP_VERSION,
+      data_coleta: new Date().toISOString(),
+      equipamentos: SES.equipamentos.map(eq => {
+        const { _fotos, _salvo, _ts, ...rest } = eq;
+        return {
+          ...rest,
+          id_equipamento_colect: eq.id_equipamento_colect || newEquipId(),
+          fotos: normalizarFotosParaEnvio(eq),
+          status_completude: eq.status_completude || (eq._nao_enquadrado ? 'nao_enquadrado' : 'salvo')
+        };
+      })
+    };
+
+    // Verificar tamanho do payload
+    const payloadStr = JSON.stringify(payload);
+    const sizeMB = payloadStr.length / (1024 * 1024);
+    if (sizeMB > 35) {
+      hideLoading();
+      showToast('Payload muito grande. Reduza a quantidade de fotos ou envie em partes.', 'err');
+      return;
+    }
+
+    showLoading(`Enviando… (${sizeMB.toFixed(1)} MB)`);
+    const r = await gasPost('salvarLevantamentoNR13', payload);
+    hideLoading();
+
+    if (r.status === 'ok') {
+      // Marcar sync_status e preservar retorno do Drive
+      SES.equipamentos.forEach((eq, idx) => {
+        const ret = r.resultados && r.resultados[idx];
+        eq.sync_status = 'synced';
+        eq.synced_at = new Date().toISOString();
+        if (ret) {
+          if (ret.drive_folder_url) eq.drive_folder_url = ret.drive_folder_url;
+          if (ret.drive_folder_id) eq.drive_folder_id  = ret.drive_folder_id;
+          if (ret.quantidade_fotos !== undefined) eq.quantidade_fotos = ret.quantidade_fotos;
+          if (ret.fotos_json) eq.fotos_json = ret.fotos_json;
+          if (ret.primeira_foto_url) eq.primeira_foto_url = ret.primeira_foto_url;
+        }
+      });
+      saveOSDraft();
+      document.getElementById('tc-summary').textContent = SES.equipamentos.length + ' equipamento(s) registrado(s).';
+      document.getElementById('tc-id').textContent = r.id || 'LNR-' + Date.now();
+      showToast('✅ Dados enviados com sucesso!');
+      goTo('tc');
+    } else {
+      showToast('Erro GAS: ' + (r.mensagem || 'falha desconhecida'), 'err');
+    }
+  } catch(e) {
+    hideLoading();
+    showToast('Falha ao enviar: ' + e.message, 'err');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ENVIO SELETIVO PARA RELATÓRIO OFICIAL
+// ═══════════════════════════════════════════════════════════════
+async function enviarSelecionados() {
+  if (DEMO_MODE) { showToast('Modo demo — GAS não configurado', 'warn'); return; }
+
+  // Coletar índices selecionados
+  const indices = SES.equipamentos
+    .map((eq, idx) => {
+      const chk = document.getElementById('chk_envio_' + idx);
+      return chk && chk.checked ? idx : -1;
+    })
+    .filter(i => i >= 0);
+
+  if (!indices.length) { showToast('Selecione ao menos um equipamento', 'warn'); return; }
+
+  await _enviarParaRelatorio(indices, false);
+}
+
+async function enviarOSCompleta() {
+  if (DEMO_MODE) { showToast('Modo demo — GAS não configurado', 'warn'); return; }
+
+  const indices = SES.equipamentos
+    .map((_, i) => i)
+    .filter(i => {
+      const eq = SES.equipamentos[i];
+      return eq._salvo || eq._nao_enquadrado || eq.status_completude === 'nao_enquadrado';
+    });
+
+  if (!indices.length) { showToast('Nenhum equipamento finalizado para enviar', 'warn'); return; }
+
+  await _enviarParaRelatorio(indices, true);
+}
+
+async function _enviarParaRelatorio(indices, osCompleta) {
+  ensureVisitId();
+  autosaveDraft('before_envio_relatorio', true);
+
+  showLoading('Preparando envio…');
+  await new Promise(r => setTimeout(r, 80));
+
+  try {
+    const equipsSelecionados = indices.map(idx => {
+      const eq = SES.equipamentos[idx];
+      const { _fotos, _salvo, _ts, ...rest } = eq;
+      return {
+        ...rest,
+        id_equipamento_colect: eq.id_equipamento_colect || newEquipId(),
+        fotos: normalizarFotosParaEnvio(eq),
+        status_completude: eq.status_completude || (eq._nao_enquadrado ? 'nao_enquadrado' : 'salvo'),
+        foto_capa_key: eq.foto_capa_key || '',
+        sync_status: 'liberado_relatorio',
+      };
+    });
+
+    const payload = {
+      id_visita_colect: SES.id_visita_colect,
+      id_os:       SES.os.id_os,
+      numero_os:   SES.os.numero_os,
+      id_cliente:  SES.os.id_cliente,
+      cliente:     SES.os.cliente,
+      id_inspetor: SES.inspetor.id_inspetor,
+      inspetor:    SES.inspetor.nome,
+      app_version: APP_VERSION,
+      data_coleta: new Date().toISOString(),
+      equipamentos: equipsSelecionados,
+    };
+
+    // Se OS completa, adicionar sinal de status da OS
+    if (osCompleta) {
+      payload.os_status_update = 'pronta_para_relatorio';
+    }
+
+    const payloadStr = JSON.stringify(payload);
+    const sizeMB = payloadStr.length / (1024 * 1024);
+    if (sizeMB > 35) {
+      hideLoading();
+      showToast('Payload muito grande. Reduza as fotos ou envie em partes.', 'err');
+      return;
+    }
+
+    showLoading(`Enviando… (${sizeMB.toFixed(1)} MB)`);
+    const r = await gasPost('salvarLevantamentoNR13', payload);
+    hideLoading();
+
+    if (r.status === 'ok') {
+      // Atualizar sync_status dos equipamentos enviados
+      indices.forEach((idx, relIdx) => {
+        const eq = SES.equipamentos[idx];
+        const ret = r.resultados && r.resultados[relIdx];
+        eq.sync_status = 'liberado_relatorio';
+        eq.synced_at = new Date().toISOString();
+        if (ret) {
+          if (ret.drive_folder_url) eq.drive_folder_url = ret.drive_folder_url;
+          if (ret.drive_folder_id)  eq.drive_folder_id  = ret.drive_folder_id;
+          if (ret.quantidade_fotos !== undefined) eq.quantidade_fotos = ret.quantidade_fotos;
+          if (ret.fotos_json)       eq.fotos_json = ret.fotos_json;
+          if (ret.primeira_foto_url) eq.primeira_foto_url = ret.primeira_foto_url;
+        }
+      });
+
+      // Se OS completa, gravar os_status na OS via atualizarOSColect
+      if (osCompleta && SES.os?.id_os) {
+        try {
+          await api('atualizarOSColect', {
+            id_os: SES.os.id_os,
+            os_status: 'pronta_para_relatorio',
+          });
+        } catch(e) {
+          console.warn('Falha ao atualizar os_status da OS:', e.message);
+        }
+      }
+
+      saveOSDraft();
+      renderEnvioList(); // Atualizar UI com novos status
+      const msg = osCompleta
+        ? `✅ OS completa enviada! ${indices.length} equipamento(s) liberado(s) para relatório.`
+        : `✅ ${indices.length} equipamento(s) enviado(s) para relatório.`;
+      showToast(msg);
+    } else {
+      showToast('Erro GAS: ' + (r.mensagem || 'falha desconhecida'), 'err');
+    }
+  } catch(e) {
+    hideLoading();
+    showToast('Falha ao enviar: ' + e.message, 'err');
+  }
+}
+
+
+
+// ═══════════════════════════════════════════════════════════════
+// AUTOSAVE LISTENERS
+// ═══════════════════════════════════════════════════════════════
+window.addEventListener('blur', () => autosaveDraft('blur', true));
+document.addEventListener('visibilitychange', () => { if (document.hidden) autosaveDraft('hidden', true); });
+setInterval(() => autosaveDraft('interval'), AUTOSAVE_INTERVAL_MS);
+function setupColectBackGuard() {
+  history.pushState({ colecttap_guard: true }, '');
+  window.addEventListener('popstate', function(e) {
+    if (_allowLeave) return;
+    if (temDadosColectPreenchidos()) {
+      history.pushState({ colecttap_guard: true }, '');
+      document.getElementById('colectBackGuard').classList.add('open');
+    }
+  });
+  window.addEventListener('beforeunload', function(e) {
+    if (!_allowLeave && temDadosColectPreenchidos()) {
+      captureCurrentScreenState('beforeunload');
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    }
+  });
+}
+
+function guardarColectFicar() {
+  document.getElementById('colectBackGuard').classList.remove('open');
+}
+
+function guardarColectSalvarSair() {
+  captureCurrentScreenState('salvar-sair');
+  saveOSDraft();
+  showToast('💾 Rascunho salvo.');
+  document.getElementById('colectBackGuard').classList.remove('open');
+}
+
+function guardarColectSairSemSalvar() {
+  if (!confirm('Tem certeza? Dados não salvos serão perdidos.')) return;
+  _allowLeave = true;
+  document.getElementById('colectBackGuard').classList.remove('open');
+  history.back();
+}
+window.addEventListener('online', ()=>colectFlushPending());
+
+// ═══════════════════════════════════════════════════════════════
+// MODAL PENDÊNCIA
+// ═══════════════════════════════════════════════════════════════
+const PEND_MOTIVOS = ['Informação não encontrada','Placa ilegível','Equipamento sem placa','Documento inexistente','Documento não disponibilizado pelo cliente','Acesso não permitido','Área de risco','Trabalho em altura não liberado','Espaço confinado não liberado','Não aplicável','A verificar posteriormente','Outro'];
+function abrirModalPendencia(secao, campo, label, onConfirm) {
+  document.getElementById('pend-subtitle').textContent = label || campo;
+  document.getElementById('pend-motivos').innerHTML = PEND_MOTIVOS.map((m,i)=>`<label style="display:flex;gap:8px;align-items:flex-start"><input type="radio" name="pend_motivo" value="${m.replace(/"/g,'&quot;')}" ${i===0?'checked':''}><span>${m}</span></label>`).join('');
+  document.getElementById('pend-obs').value = '';
+  document.getElementById('pend-confirm-btn').onclick = () => {
+    const motivo = (document.querySelector('input[name="pend_motivo"]:checked')||{}).value || '';
+    const obs = document.getElementById('pend-obs').value || '';
+    registrarPendencia(secao, campo, label, motivo, obs);
+    if (typeof onConfirm === 'function') onConfirm({motivo, obs});
+    document.getElementById('modal-pendencia').classList.remove('open');
+  };
+  document.getElementById('modal-pendencia').classList.add('open');
+}
+function registrarPendencia(secao, campo, label, motivo, obs) {
+  markDirty(); debounceAutosave('pendencia');
+  if (!Array.isArray(SES.pendencias)) SES.pendencias = [];
+  SES.pendencias.push({ secao, campo, label, motivo, observacao: obs, created_at: new Date().toISOString(), inspetor: SES.inspetor ? SES.inspetor.nome : '', status: 'pendente' });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+window.addEventListener('load', () => {
+  setupColectBackGuard();
+  if (DEMO_MODE) {
+    setGASStatus('', 'Modo demo local');
+  } else {
+    setGASStatus('spin', 'Conectando ao GAS…');
+    gasGet('healthCheck').then(r => {
+      setGASStatus('ok', 'GAS · ' + (r.version || 'ok'));
+    }).catch(() => {
+      setGASStatus('err', 'GAS indisponível');
+    });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// DIAGNÓSTICO + DEDUP (v2.10)
+// ═══════════════════════════════════════════════════════════════
+function runDiagnostico() {
+  const out = [];
+  out.push('APP_VERSION: ' + APP_VERSION);
+  out.push('');
+  const keys = Object.keys(localStorage).filter(k => k.startsWith('colect_os_'));
+  out.push(keys.length + ' OS no localStorage');
+  out.push('');
+  let totalDupes = 0;
+  keys.forEach(k => {
+    const osId = k.replace('colect_os_', '');
+    const raw = localStorage.getItem(k);
+    const d = JSON.parse(raw);
+    const eqs = (d && d.equipamentos) || [];
+    out.push('OS ' + osId + ': ' + eqs.length + ' equips (' + (raw.length/1024).toFixed(0) + 'KB)');
+    const seen = {}; let dupes = 0; const tagCount = {};
+    eqs.forEach((eq, i) => {
+      const id = eq.id_equipamento_colect;
+      if (seen[id]) { dupes++; out.push('  DUP #' + i + ' id=' + (id||'').substring(0,20) + '.. tag=' + ((eq.dados&&eq.dados.tag)||'?') + ' sync=' + eq.sync_status); }
+      else seen[id] = true;
+      const t = (eq.dados && eq.dados.tag) || eq.tag || '?';
+      tagCount[t] = (tagCount[t]||0) + 1;
+    });
+    const dupTags = Object.entries(tagCount).filter(e => e[1] > 1);
+    if (dupTags.length) out.push('  TAGs repetidas: ' + dupTags.map(e => e[0]+' ('+e[1]+'x)').join(', '));
+    const st = {};
+    eqs.forEach(e => { const s = e.sync_status||'?'; st[s]=(st[s]||0)+1; });
+    out.push('  Status: ' + JSON.stringify(st));
+    if (dupes > 0) { totalDupes += dupes; out.push('  ' + dupes + ' duplicata(s)!'); }
+    else out.push('  OK sem duplicatas');
+    out.push('');
+  });
+  const legKeys = Object.keys(localStorage).filter(k => k.startsWith('colect_equip_'));
+  if (legKeys.length) {
+    out.push('CHAVES LEGADO:');
+    legKeys.forEach(k => { try { const a=JSON.parse(localStorage.getItem(k)); out.push('  '+k+': '+(Array.isArray(a)?a.length:0)+' itens'); } catch(e){} });
+    out.push('');
+  }
+  out.push('MEMORIA:');
+  out.push('  equipamentos: ' + (SES.equipamentos||[]).length);
+  out.push('  currentEquipId: ' + SES.currentEquipId);
+  out.push('  equipEdit: ' + SES.equipEdit);
+  out.push('  tela: ' + currentScreen);
+  out.push('');
+  if (totalDupes > 0) out.push('TOTAL: ' + totalDupes + ' duplicata(s). Toque LIMPAR para corrigir.');
+  else out.push('Nenhuma duplicata. Se o contador cresce, screenshot ANTES e DEPOIS de envio.');
+  document.getElementById('diag-output').textContent = out.join('\n');
+  document.getElementById('diag-overlay').style.display = 'block';
+}
+
+function runDedup() {
+  const out = []; let total = 0;
+  Object.keys(localStorage).filter(k => k.startsWith('colect_os_')).forEach(k => {
+    const d = JSON.parse(localStorage.getItem(k));
+    const eqs = d.equipamentos || [];
+    const seen = {}; const uniq = [];
+    eqs.forEach(eq => {
+      const id = eq.id_equipamento_colect;
+      if (seen[id]) {
+        const ei = uniq.findIndex(e => e.id_equipamento_colect === id);
+        if (ei >= 0) { const p={'liberado_relatorio':3,'synced':2,'salvo':1,'local':0,'rascunho':-1}; if ((p[eq.sync_status]||0)>(p[uniq[ei].sync_status]||0)) uniq[ei]=eq; }
+      } else { seen[id]=true; uniq.push(eq); }
+    });
+    if (uniq.length < eqs.length) {
+      total += eqs.length - uniq.length;
+      d.equipamentos = uniq;
+      localStorage.setItem(k, JSON.stringify(d));
+      out.push(k.replace('colect_os_','') + ': ' + eqs.length + ' -> ' + uniq.length);
+    }
+  });
+  Object.keys(localStorage).filter(k => k.startsWith('colect_equip_')).forEach(k => { localStorage.removeItem(k); out.push('Legado removido: '+k); });
+  if (total > 0) { out.push(''); out.push(total + ' duplicata(s) removida(s). Recarregue a pagina.'); }
+  else out.push('Nenhuma duplicata para remover.');
+  document.getElementById('diag-output').textContent = out.join('\n');
+  if (SES.os && SES.os.id_os) {
+    const draft = loadDraftsForOS(SES.os.id_os);
+    if (draft && Array.isArray(draft.equipamentos)) {
+      SES.equipamentos = draft.equipamentos.map(e => {
+        const sc=e.status_completude||'rascunho'; const ss=e.sync_status||'local';
+        return {...(e.dados||{}), id_equipamento_colect:e.id_equipamento_colect, tipo:e.tipo||'', _fotos:e.fotos||{}, _pendencias:e.pendencias||[], _salvo:sc!=='rascunho', _nao_enquadrado:sc==='nao_enquadrado', status_completude:sc, sync_status:ss, synced_at:e.synced_at||null, drive_folder_url:e.drive_folder_url||null, drive_folder_id:e.drive_folder_id||null, created_at:e.created_at||null};
+      });
+    }
+    renderT2();
+  }
+}
+</script>
+</body>
+</html>
