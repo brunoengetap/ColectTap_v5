@@ -1780,7 +1780,7 @@ async function _gerarPDFEquipamentos(equips, nomeArquivo) {
     y=row2(y,eq,[{l:'PMTA (kgf/cm²)',v:eq.pmta},{l:'Pressão de Trabalho (kgf/cm²)',v:eq.pressao_trabalho}]);
     y=row2(y,eq,[{l:'Pressão de Teste Hidrostático (kgf/cm²)',v:eq.pressao_teste},{l:'Temperatura Média de Operação (°C)',v:eq.temperatura}]);
     y=row2(y,eq,[{l:'Já Foi Inspecionado Anteriormente?',v:eq.ja_inspecionado},{l:'Ano da Última Inspeção',v:eq.ano_ultima_inspecao}]);
-    if(s(eq.tipo)!=='tubulacao'){
+    if(s(eq.tipo)==='vaso'){
       y=row2(y,eq,[{l:'Volume (L)',v:eq.volume},{l:'Material',v:eq.material}]);
       y=row2(y,eq,[{l:'Diâmetro (mm)',v:eq.diametro},{l:'Comprimento (mm)',v:eq.comprimento}]);
       y=row2(y,eq,[{l:'Espessura de Parede (mm)',v:eq.espessura_parede},{l:'Possui Isolamento?',v:eq.possui_isolamento||eq.isolamento}]);
